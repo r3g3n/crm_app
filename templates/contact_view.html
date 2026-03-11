@@ -39,7 +39,7 @@
     <div class="col-md-6"><strong>Email 3:</strong> {{ contact.email3 }}</div>
     <div class="col-md-6"><strong>Категория:</strong> {{ contact.category or '—' }}</div>
     <div class="col-md-6"><strong>Статус:</strong> <span class="badge bg-{{ status_color(contact.status) }}">{{ contact.status }}</span></div>
-    <div class="col-12"><strong>Описание:</strong><br>{{ contact.description }}</div>
+    <div class="col-12"><strong>Описание:</strong><br><div class="ql-editor p-0">{{ contact.description|safe_html }}</div></div>
   </div>
   <div class="d-flex gap-2 mt-3">
     <a class="btn btn-outline-primary" href="{{ url_for('contact_edit', contact_id=contact.id) }}">Редактировать</a>
@@ -49,33 +49,72 @@
 
 <h2 class="h5">Комментарии</h2>
 <form method="post" action="{{ url_for('add_comment', contact_id=contact.id) }}" class="card p-3 mb-3">
-  <textarea name="content" rows="3" placeholder="Новый комментарий..." required class="form-control mb-2"></textarea>
+  <input type="hidden" name="content" id="comment-input">
+  <div id="comment-editor" style="height: 100px;" class="bg-body mb-2"></div>
   <div class="d-flex gap-2">
     <button type="submit" class="btn btn-primary">Добавить</button>
   </div>
   <div class="text-muted small mt-2">Используйте комментарии для фиксации этапов переговоров.</div>
   </form>
 
-<ul class="list-group">
-  {% for c in comments %}
-  <li class="list-group-item d-flex justify-content-between align-items-start">
-    <div>
-      <div class="d-flex align-items-center text-muted small mb-1">
-        {% if c.avatar_url %}
-        <img src="{{ c.avatar_url }}" alt="{{ c.username }}" class="rounded-circle me-2" width="24" height="24" style="object-fit: cover;">
-        {% else %}
-        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2 text-white" style="width: 24px; height: 24px; font-size: 12px;">{{ c.username[0]|upper }}</div>
-        {% endif %}
-        {{ c.created_at|datetime }} — <strong>{{ c.username }}</strong>
+    {% for comment in comments %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div class="d-flex align-items-center gap-2">
+            {% if comment.avatar_url %}
+            <img src="{{ comment.avatar_url }}" alt="Avatar" class="rounded-circle" width="24" height="24" style="object-fit: cover;">
+            {% else %}
+            <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; font-size: 12px;">
+              {{ comment.username[:1].upper() }}
+            </div>
+            {% endif %}
+            <span class="fw-bold">{{ comment.username }}</span>
+            <small class="text-muted">{{ comment.created_at|datetime }}</small>
+          </div>
+          {% if session.user_id == comment.user_id or session.role == 'admin' %}
+          <form method="post" action="{{ url_for('delete_comment', comment_id=comment.id) }}" onsubmit="return confirm('Удалить комментарий?');">
+            <button type="submit" class="btn btn-sm btn-outline-danger border-0 p-0" title="Удалить">🗑</button>
+          </form>
+          {% endif %}
+        </div>
+        <div class="card-text ql-editor p-0">{{ comment.content|safe_html }}</div>
       </div>
-      <div>{{ c.content }}</div>
     </div>
-    <form method="post" action="{{ url_for('delete_comment', comment_id=c.id) }}" onsubmit="return confirm('Удалить комментарий?');">
-      <button type="submit" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Удалить">🗑</button>
-    </form>
-  </li>
-  {% else %}
-  <li class="list-group-item text-muted">Пока нет комментариев</li>
-  {% endfor %}
-</ul>
+    {% else %}
+    <p class="text-muted">Нет комментариев.</p>
+    {% endfor %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var quill = new Quill('#comment-editor', {
+      theme: 'snow',
+      placeholder: 'Новый комментарий...',
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['emoji'],
+            ['clean']
+          ]
+        },
+        "emoji-toolbar": true,
+        "emoji-textarea": false,
+        "emoji-shortname": true,
+      }
+    });
+
+    var form = document.querySelector('form.card');
+    form.onsubmit = function(e) {
+      var html = quill.root.innerHTML;
+      if (quill.getText().trim().length === 0) {
+        alert("Комментарий не может быть пустым");
+        e.preventDefault();
+        return false;
+      }
+      document.querySelector('#comment-input').value = html;
+    };
+  });
+</script>
 {% endblock %}

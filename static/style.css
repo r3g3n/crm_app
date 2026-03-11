@@ -20,6 +20,12 @@
   --transition-base: all 0.2s ease-in-out;
 }
 
+body {
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--background-bg);
+    color: var(--text-primary);
+}
+
 /* Dark Mode Variables - Optimized Slate Palette */
 [data-bs-theme="dark"] {
   --background-bg: #0f172a; /* Slate 900 */
@@ -98,196 +104,108 @@
 }
 
 [data-bs-theme="dark"] .copyable:hover {
-    background-color: #334155;
-    color: #818cf8;
+    background-color: #334155 !important;
 }
 
-[data-bs-theme="dark"] .user-badge {
-    background-color: #334155;
+/* Quill Editor Dark Mode Overrides */
+[data-bs-theme="dark"] .ql-toolbar {
+    background-color: var(--surface-bg);
+    border-color: var(--border-color) !important;
+}
+
+[data-bs-theme="dark"] .ql-container {
+    background-color: var(--surface-bg);
+    border-color: var(--border-color) !important;
     color: var(--text-primary);
 }
 
-[data-bs-theme="dark"] .card {
-    background-color: #1e293b;
-    border: 1px solid #334155;
+[data-bs-theme="dark"] .ql-stroke {
+    stroke: #cbd5e1 !important; /* Light gray stroke for icons */
 }
 
-[data-bs-theme="dark"] .desc-cell:hover {
-    background-color: #1e293b;
+[data-bs-theme="dark"] .ql-fill {
+    fill: #cbd5e1 !important; /* Light gray fill for icons */
+}
+
+[data-bs-theme="dark"] .ql-picker {
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .ql-editor.ql-blank::before {
+    color: #64748b !important; /* Lighter placeholder color */
+    font-style: italic;
+}
+
+/* Active state for toolbar buttons in dark mode */
+[data-bs-theme="dark"] .ql-active .ql-stroke {
+    stroke: var(--primary-color) !important;
+}
+[data-bs-theme="dark"] .ql-active .ql-fill {
+    fill: var(--primary-color) !important;
+}
+
+/* Ensure editor text is readable in dark mode */
+[data-bs-theme="dark"] .ql-editor {
     color: var(--text-primary);
-    border-color: #475569;
 }
 
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: var(--background-bg);
-  color: var(--text-primary);
-  line-height: 1.5;
-  transition: background-color 0.3s ease, color 0.3s ease;
+/* Light Mode Placeholder Optimization */
+.ql-editor.ql-blank::before {
+    color: #94a3b8; /* Consistent placeholder color */
+    font-style: italic;
 }
 
-/* Navbar Improvements */
-.navbar {
-  backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid var(--border-color);
+/* Emoji Picker Dark Mode Overrides */
+[data-bs-theme="dark"] #emoji-palette {
+    background-color: var(--surface-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
 }
 
-.navbar-brand span {
-  font-weight: 700;
-  color: var(--primary-color);
-  letter-spacing: -0.025em;
+[data-bs-theme="dark"] #tab-toolbar {
+    background-color: var(--surface-bg);
+    border-bottom: 1px solid var(--border-color);
 }
 
-.nav-link {
-  color: var(--text-secondary) !important;
-  font-weight: 500;
-  transition: var(--transition-base);
-  border-radius: var(--radius-md);
+[data-bs-theme="dark"] .emoji-tab {
+    background-color: var(--surface-bg);
+    color: var(--text-secondary);
 }
 
-.nav-link:hover, .nav-link.active {
-  color: var(--primary-color) !important;
-  background-color: #eff6ff;
+[data-bs-theme="dark"] .emoji-tab.active {
+    background-color: #334155;
+    color: var(--primary-color);
 }
 
-.user-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  background-color: #f1f5f9;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  color: var(--text-primary);
+[data-bs-theme="dark"] .emoji-item:hover {
+    background-color: #334155;
+    border-radius: 4px;
 }
 
-/* Card Modernization */
-.card {
-  border: none;
-  background-color: var(--surface-bg);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition-base);
-  overflow: visible; /* Changed for tooltip */
+/* Login Page Layout */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    padding: 20px;
 }
 
-.card:hover {
-  box-shadow: var(--shadow-md);
-  /* transform: translateY(-1px); Removed to prevent tooltip issues */
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background-color: var(--surface-bg);
 }
 
-.card-header {
-  background-color: transparent;
-  border-bottom: 1px solid var(--border-color);
-  padding: 1rem 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary);
+.login-logo {
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-/* Button Modernization - Raised/Plate Style */
-.btn {
-  font-weight: 500;
-  border-radius: var(--radius-md);
-  padding: 0.5rem 1rem;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  position: relative;
-  overflow: visible;
-  /* Raised Effect Defaults */
-  border: 1px solid transparent; 
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
-.btn-sm {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
-}
-
-.btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Primary Button */
-.btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
-
-/* Outline/Secondary Buttons as White Plates */
-.btn-outline-primary, 
-.btn-outline-secondary, 
-.btn-outline-danger,
-.btn-light {
-  background-color: var(--surface-bg); /* White plate in light mode */
-  /* Keep border for definition, or remove if shadow is enough. User said "plate", usually implies solid. */
-}
-
-.btn-outline-primary {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-.btn-outline-primary:hover {
-  background-color: #eef2ff;
-  color: var(--primary-hover);
-  border-color: var(--primary-hover);
-}
-
-.btn-outline-secondary {
-  color: var(--text-secondary);
-  border-color: var(--border-color);
-}
-.btn-outline-secondary:hover {
-  background-color: #f8fafc;
-  color: var(--text-primary);
-  border-color: var(--text-secondary);
-}
-
-.btn-outline-danger {
-  color: var(--danger-color);
-  border-color: var(--danger-color);
-}
-.btn-outline-danger:hover {
-  background-color: #fef2f2;
-  color: #dc2626;
-  border-color: #dc2626;
-}
-
-.btn-light:hover {
-  background-color: #fff;
-  border-color: var(--border-color);
-}
-
-/* Dark Mode Button Enhancements */
-[data-bs-theme="dark"] .btn-primary {
-  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-}
-[data-bs-theme="dark"] .btn-primary:hover {
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
-}
-
-[data-bs-theme="dark"] .btn-outline-secondary:hover {
-  background-color: #334155;
-  color: #fff;
-  border-color: #64748b;
-  box-shadow: 0 0 15px rgba(148, 163, 184, 0.2);
-}
-
+/* Dark Mode Button Overrides */
 [data-bs-theme="dark"] .btn-light {
     background-color: #1e293b;
     border-color: #334155;
@@ -352,19 +270,6 @@ body {
 }
 
 /* Custom Utilities */
-.copyable {
-  cursor: pointer;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  transition: var(--transition-base);
-  position: relative;
-}
-
-.copyable:hover {
-  background-color: #e0e7ff;
-  color: var(--primary-color);
-}
-
 .column-toggle {
   display: flex;
   flex-wrap: wrap;
@@ -403,60 +308,47 @@ body {
   max-width: 500px;
 }
 
-/* Login Page Specific */
-.login-container {
-  min-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border-radius: 1rem;
-}
-
-.login-logo {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-/* Links & Badges */
+/* Restored Neon & Hover Effects */
 a {
   text-decoration: none;
   color: var(--primary-color);
   transition: all 0.2s ease;
-  position: relative;
-  display: inline-block;
 }
 
 a:hover {
   color: var(--primary-hover);
   text-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
-  transform: translateY(-1px);
 }
 
-/* Specific Link Overrides */
-.navbar-brand:hover {
-    text-shadow: 0 0 12px rgba(79, 70, 229, 0.3);
-    transform: none; /* Keep brand stable */
-}
-
-/* Dark Mode Links */
+/* Dark Mode Links - Neon Glow */
 [data-bs-theme="dark"] a:not(.btn) {
-    color: #f1f5f9; /* Slate 100 - more white */
+    color: #f1f5f9;
 }
 
 [data-bs-theme="dark"] a:not(.btn):hover {
     color: #ffffff;
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #818cf8, 0 0 30px #818cf8; /* White neon core with blue glow */
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #818cf8, 0 0 30px #818cf8;
 }
 
-.badge {
-  font-weight: 500;
-  padding: 0.35em 0.65em;
-  border-radius: 0.375rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+/* Copyable (Email/Phone) Hover Effects */
+.copyable {
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  transition: var(--transition-base);
+  display: inline-block; /* Ensure padding works */
 }
+
+.copyable:hover {
+  background-color: #e0e7ff;
+  color: var(--primary-color);
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.2);
+}
+
+[data-bs-theme="dark"] .copyable:hover {
+    background-color: #334155 !important;
+    color: #fff !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    text-shadow: 0 0 5px #fff;
+}
+

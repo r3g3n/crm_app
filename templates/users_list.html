@@ -37,6 +37,8 @@
           <td>
             {% if user.role == 'admin' %}
             <span class="badge bg-primary">Администратор</span>
+            {% elif user.role == 'restricted' %}
+            <span class="badge bg-info text-dark">Менеджер</span>
             {% else %}
             <span class="badge bg-secondary">Пользователь</span>
             {% endif %}

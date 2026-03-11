@@ -18,7 +18,8 @@
           <div class="mb-3">
             <label class="form-label">Роль</label>
             <select name="role" class="form-select">
-              <option value="user" {% if not user or user.role != 'admin' %}selected{% endif %}>Пользователь</option>
+              <option value="user" {% if not user or user.role == 'user' %}selected{% endif %}>Пользователь</option>
+              <option value="restricted" {% if user and user.role == 'restricted' %}selected{% endif %}>Менеджер</option>
               <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>Администратор</option>
             </select>
           </div>

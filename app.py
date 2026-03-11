@@ -8,6 +8,20 @@ from datetime import datetime
 from functools import wraps
 from flask import Flask, g, render_template, request, redirect, url_for, session, flash
 from markupsafe import Markup
+import bleach
+
+# Configure bleach allowed tags and attributes for Quill.js
+ALLOWED_TAGS = [
+    'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 
+    'a', 'span', 'blockquote', 'pre', 'img', 's', 'sub', 'sup'
+]
+ALLOWED_ATTRIBUTES = {
+    'a': ['href', 'target', 'title'],
+    'img': ['src', 'alt', 'width', 'height'],
+    'span': ['class'],
+    'p': ['class']
+}
+
 
 
 
@@ -470,6 +484,37 @@ def create_app():
         value = value.rstrip('/')
         return value
 
+    @app.template_filter('nl2br')
+    def nl2br(value):
+        if not value:
+            return ""
+        # Escape HTML first to prevent XSS
+        from markupsafe import escape
+        escaped_value = escape(value)
+        # Replace newlines with <br>
+        return Markup(str(escaped_value).replace('\n', '<br>'))
+
+    def sanitize_html(content):
+        if not content:
+            return ""
+        return bleach.clean(
+            content,
+            tags=ALLOWED_TAGS,
+            attributes=ALLOWED_ATTRIBUTES,
+            strip=True
+        )
+
+    @app.template_filter('safe_html')
+    def safe_html(value):
+        if not value:
+            return ""
+        # We assume the value is already sanitized when saved to DB, 
+        # but to be extra safe we could sanitize here too.
+        # However, for performance and to trust our own DB content (if we sanitize on input),
+        # we can just return Markup.
+        # Let's sanitize here just in case old data exists or direct DB edits happened.
+        return Markup(sanitize_html(value))
+
     @app.route("/")
     def root():
         return redirect(url_for("contacts"))
@@ -515,6 +560,10 @@ def create_app():
             where_clauses.append("status = ?")
             params.append(status_filter)
 
+        # Restrict 'restricted' users from seeing 'New' status
+        if session.get("role") == "restricted":
+            where_clauses.append("status != 'Новый'")
+
         where = ""
         if where_clauses:
             where = "WHERE " + " AND ".join(where_clauses)
@@ -539,6 +588,9 @@ def create_app():
         # Get unique statuses for the filter dropdown
         statuses = db.execute("SELECT DISTINCT status FROM contacts WHERE status IS NOT NULL AND status != '' ORDER BY status").fetchall()
         statuses = [s["status"] for s in statuses]
+        
+        if session.get("role") == "restricted":
+            statuses = [s for s in statuses if s != "Новый"]
 
         return render_template("contacts_list.html", rows=rows, q=q, status_filter=status_filter, sort_by=sort_by, statuses=statuses, page=page, pages=pages, total=total, wa_link=wa_link, tg_link=tg_link, format_phone=format_phone, status_color=status_color, per_page=per_page)
 
@@ -583,6 +635,11 @@ def create_app():
         row = db.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
         if not row:
             return redirect(url_for("contacts"))
+        
+        if session.get("role") == "restricted" and row["status"] == "Новый":
+            flash("Доступ к этому контакту ограничен", "error")
+            return redirect(url_for("contacts"))
+
         comments = db.execute(
             "SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id=u.id WHERE c.contact_id=? ORDER BY c.id DESC",
             (contact_id,)
@@ -601,6 +658,11 @@ def create_app():
         row = db.execute("SELECT * FROM contacts WHERE id=?", (contact_id,)).fetchone()
         if not row:
             return redirect(url_for("contacts"))
+            
+        if session.get("role") == "restricted" and row["status"] == "Новый":
+            flash("Доступ к этому контакту ограничен", "error")
+            return redirect(url_for("contacts"))
+
         if request.method == "POST":
             data = {
                 "city": request.form.get("city","").strip(),
@@ -634,6 +696,14 @@ def create_app():
     @login_required
     def contact_delete(contact_id):
         db = get_db()
+        row = db.execute("SELECT status FROM contacts WHERE id=?", (contact_id,)).fetchone()
+        if not row:
+            return redirect(url_for("contacts"))
+            
+        if session.get("role") == "restricted" and row["status"] == "Новый":
+            flash("Доступ запрещен", "error")
+            return redirect(url_for("contacts"))
+
         db.execute("DELETE FROM comments WHERE contact_id=?", (contact_id,))
         db.execute("DELETE FROM history WHERE contact_id=?", (contact_id,))
         db.execute("DELETE FROM contacts WHERE id=?", (contact_id,))
@@ -660,16 +730,20 @@ def create_app():
     @login_required
     def recent_comments():
         db = get_db()
-        comments = db.execute(
-            """
+        query = """
             SELECT c.*, u.username, u.avatar_url, co.phone, co.email, co.description, co.status
             FROM comments c
             JOIN users u ON c.user_id = u.id
             JOIN contacts co ON c.contact_id = co.id
-            ORDER BY c.created_at DESC
-            LIMIT 50
-            """
-        ).fetchall()
+        """
+        params = []
+        if session.get("role") == "restricted":
+            query += " WHERE co.status != ?"
+            params.append("Новый")
+            
+        query += " ORDER BY c.created_at DESC LIMIT 50"
+        
+        comments = db.execute(query, tuple(params)).fetchall()
         return render_template("recent_comments.html", comments=comments, status_color=status_color)
 
     @app.route("/comments/<int:comment_id>/delete", methods=["POST"])
@@ -700,4 +774,4 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5002, debug=True)
+    app.run(host="0.0.0.0", port=5001, debug=True)

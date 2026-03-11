@@ -138,10 +138,10 @@
         <span class="badge bg-{{ status_color(r.status) }}">{{ r.status }}</span>
       </td>
       <td class="col-description position-relative">
-        <div class="desc-cell">{{ r.description }}</div>
+        <div class="desc-cell">{{ r.description|striptags|truncate(100) }}</div>
       </td>
       <td class="col-actions">
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 justify-content-center align-items-center">
           <a class="btn btn-sm btn-outline-primary position-relative" href="{{ url_for('contact_view', contact_id=r.id) }}" title="Открыть">
             👁
             {% if r.comment_count > 0 %}

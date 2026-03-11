@@ -50,10 +50,11 @@
     </div>
     <div class="col-12">
       <label class="form-label">Описание</label>
-      <textarea name="description" rows="6" class="form-control">{{ contact.description if contact else '' }}</textarea>
+      <input type="hidden" name="description" id="description-input">
+      <div id="description-editor" style="height: 200px;" class="bg-body">{{ contact.description|safe if contact else '' }}</div>
     </div>
     <div class="col-12 d-flex gap-2 mt-4 align-items-center flex-wrap">
-      <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+      <button type="submit" class="btn btn-primary" id="save-btn">💾 Сохранить</button>
       <a class="btn btn-outline-secondary" href="{{ url_for('contacts') }}">❌ Отмена</a>
       {% if contact %}
       <a class="btn btn-outline-primary" href="{{ url_for('contact_view', contact_id=contact.id) }}">👁 Просмотр</a>
@@ -68,4 +69,34 @@
 {% if contact %}
 <form id="delete-form-{{ contact.id }}" method="post" action="{{ url_for('contact_delete', contact_id=contact.id) }}" style="display: none;"></form>
 {% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var quill = new Quill('#description-editor', {
+      theme: 'snow',
+      placeholder: 'Введите описание...',
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['emoji'],
+            ['clean']
+          ]
+        },
+        "emoji-toolbar": true,
+        "emoji-textarea": false,
+        "emoji-shortname": true,
+      }
+    });
+
+    // Populate hidden input on submit
+    var form = document.querySelector('form.card');
+    form.onsubmit = function() {
+      // Get HTML content
+      var html = quill.root.innerHTML;
+      document.querySelector('#description-input').value = html;
+    };
+  });
+</script>
 {% endblock %}
