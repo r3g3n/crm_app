@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-transparent py-3">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-person-gear me-2"></i>User Profile</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4 pb-4 border-bottom">
+                        <div class="me-3">
+                            {% if session.get('avatar_url') %}
+                                <img src="{{ session.get('avatar_url') }}" alt="Avatar" class="rounded-circle shadow-sm" width="64" height="64" style="object-fit: cover;">
+                            {% else %}
+                                <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                    <i class="bi bi-person-circle fs-2 text-primary"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Current User</h6>
+                            <h4 class="mb-0 fw-bold">{{ session.get('username') }}</h4>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 fw-bold">User Information</h5>
+                    <form method="post" class="mb-4 pb-4 border-bottom">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ session.get('username') }}" required>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary fw-medium">
+                                <i class="bi bi-check-lg me-2"></i>Update Username
+                            </button>
+                        </div>
+                    </form>
+
+                    <h5 class="mb-3 fw-bold">Avatar Settings</h5>
+                    <form method="post" class="mb-4 pb-4 border-bottom">
+                        <div class="mb-3">
+                            <label for="avatar_url" class="form-label">Avatar Image URL</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent"><i class="bi bi-link-45deg"></i></span>
+                                <input type="url" class="form-control" id="avatar_url" name="avatar_url" value="{{ session.get('avatar_url') or '' }}" placeholder="https://example.com/my-avatar.jpg">
+                            </div>
+                            <div class="form-text">Paste a direct link to an image (JPG, PNG, WebP) to use as your profile picture.</div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary fw-medium">
+                                <i class="bi bi-check-lg me-2"></i>Save Avatar
+                            </button>
+                        </div>
+                    </form>
+
+                    <h5 class="mb-3 fw-bold">Change Password</h5>
+                    <form method="post">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required minlength="4">
+                            <div class="form-text">Minimum 4 characters</div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="4">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary fw-medium">
+                                <i class="bi bi-check-lg me-2"></i>Update Password
+                            </button>
+                            <a href="{{ url_for('contacts') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

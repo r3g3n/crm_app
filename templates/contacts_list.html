@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h1 class="h3 mb-0">Контакты</h1>
+  <span class="text-muted">Всего: {{ total }}</span>
+</div>
+<form method="get" class="row g-2 align-items-center mb-3">
+  <div class="col-md-4">
+    <input type="text" name="q" placeholder="Поиск..." value="{{ q }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="">Все статусы</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="sort" class="form-select" onchange="this.form.submit()">
+      <option value="id" {% if sort_by == 'id' %}selected{% endif %}>По ID</option>
+      <option value="updated_at" {% if sort_by == 'updated_at' %}selected{% endif %}>По дате изменения</option>
+    </select>
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">Найти</button>
+  </div>
+  <div class="col-auto">
+    <a class="btn btn-success" href="{{ url_for('contact_new') }}">➕ Новый</a>
+  </div>
+  {% if q or status_filter %}
+  <div class="col-auto">
+    <a class="btn btn-outline-secondary" href="{{ url_for('contacts') }}">Сброс</a>
+  </div>
+  {% endif %}
+</form>
+<div class="card mb-3 shadow-sm">
+  <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#columnToggle" style="cursor: pointer;">
+    <span class="fw-bold">🛠 Настройка колонок</span>
+    <span class="small text-muted">Нажмите, чтобы свернуть/развернуть</span>
+  </div>
+  <div class="collapse show" id="columnToggle">
+    <div class="card-body">
+      <div class="d-flex flex-wrap gap-2 column-toggle">
+        {% for col, label in [
+          ('id', 'ID'),
+          ('city', 'Город'),
+          ('country', 'Страна'),
+          ('phone', 'Телефон'),
+          ('site', 'Сайт'),
+          ('email', 'Email'),
+          ('category', 'Категория'),
+          ('status', 'Статус'),
+          ('description', 'Описание'),
+          ('actions', 'Действия')
+        ] %}
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="toggle-{{ col }}" data-col-toggle="{{ col }}" checked>
+          <label class="form-check-label" for="toggle-{{ col }}">{{ label }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<table class="table table-striped table-hover align-middle">
+  <thead>
+    <tr>
+      <th class="col-id">ID</th>
+      <th class="col-city">Город</th>
+      <th class="col-country">Страна</th>
+      <th class="col-phone">Телефон</th>
+      <th class="col-site">Сайт</th>
+      <th class="col-email">Email</th>
+      <th class="col-category">Категория</th>
+      <th class="col-status">Статус</th>
+      <th class="col-description">Описание</th>
+      <th class="col-actions">Действия</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="col-id">{{ r.id }}</td>
+      <td class="col-city">{{ r.city }}</td>
+      <td class="col-country">{{ r.country }}</td>
+      <td class="col-phone">
+        {% set p1_land = is_landline(r.phone) %}
+        {% set p2_land = is_landline(r.phone2) %}
+        
+        {% if r.phone %}
+        <div class="copyable" data-copy="{{ format_phone(r.phone) }}">{{ r.phone|highlight_phone }}</div>
+        {% endif %}
+        {% if r.phone2 %}
+        <div class="copyable" data-copy="{{ format_phone(r.phone2) }}">{{ r.phone2|highlight_phone }}</div>
+        {% endif %}
+        
+        <div class="links">
+          {% set target_phone = r.phone %}
+          {% if p1_land %}
+            {% if r.phone2 and not p2_land %}
+               {% set target_phone = r.phone2 %}
+            {% else %}
+               {% set target_phone = None %}
+            {% endif %}
+          {% endif %}
+          
+          {% if target_phone %}
+            <a href="{{ wa_link(target_phone) }}" target="_blank">WA</a>
+            <a href="{{ tg_link(target_phone) }}" target="_blank">TG</a>
+          {% endif %}
+        </div>
+      </td>
+      <td class="col-site">
+        {% if r.site %}
+        <a href="{{ r.site }}" target="_blank">{{ r.site|clean_url }}</a>
+        {% endif %}
+      </td>
+      <td class="col-email">
+        <div class="d-flex align-items-center gap-2">
+          <span class="copyable text-truncate" data-copy="{{ r.email }}" style="max-width: 150px; cursor: pointer;" title="Нажмите, чтобы скопировать">{{ r.email }}</span>
+          {% if r.email %}
+          <button class="btn btn-sm btn-light border p-1 lh-1" onclick="generatePrompt(this)" 
+                  data-desc="{{ r.description }}" 
+                  data-site="{{ r.site }}" 
+                  data-email="{{ r.email }}" 
+                  data-city="{{ r.city }}" 
+                  title="Создать промпт">🤖</button>
+          <button class="btn btn-sm btn-light border p-1 lh-1" onclick="generateEximpediaPrompt(this)" 
+                  data-site="{{ r.site }}" 
+                  data-email="{{ r.email }}" 
+                  title="Анализ на Eximpedia">🎯</button>
+          {% endif %}
+        </div>
+      </td>
+      <td class="col-category">{{ r.category }}</td>
+      <td class="col-status">
+        <span class="badge bg-{{ status_color(r.status) }}">{{ r.status }}</span>
+      </td>
+      <td class="col-description position-relative">
+        <div class="desc-cell">{{ r.description }}</div>
+      </td>
+      <td class="col-actions">
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-primary position-relative" href="{{ url_for('contact_view', contact_id=r.id) }}" title="Открыть">
+            👁
+            {% if r.comment_count > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+              {{ r.comment_count }}
+            </span>
+            {% endif %}
+          </a>
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contact_edit', contact_id=r.id) }}" title="Редактировать">✏️</a>
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <div class="d-flex align-items-center gap-2">
+    {% if page > 1 %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('contacts', q=q, status=status_filter, sort=sort_by, page=page-1, per_page=per_page) }}">← Назад</a>
+    {% endif %}
+    <span class="text-muted">Стр. {{ page }} из {{ pages }}</span>
+    {% if page < pages %}
+      <a class="btn btn-outline-secondary" href="{{ url_for('contacts', q=q, status=status_filter, sort=sort_by, page=page+1, per_page=per_page) }}">Вперёд →</a>
+    {% endif %}
+  </div>
+  
+  <form method="get" class="d-flex align-items-center gap-2">
+    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+    {% if status_filter %}<input type="hidden" name="status" value="{{ status_filter }}">{% endif %}
+    {% if sort_by %}<input type="hidden" name="sort" value="{{ sort_by }}">{% endif %}
+    <input type="hidden" name="page" value="1">
+    <span class="text-muted text-nowrap">Показывать по:</span>
+    <select name="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+      {% for n in [10, 25, 50, 100] %}
+      <option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+<script>
+  // Prompt generation
+  window.generatePrompt = function(btn) {
+    const desc = btn.getAttribute('data-desc') || "клиента";
+    const site = btn.getAttribute('data-site') || "сайт компании";
+    const email = btn.getAttribute('data-email') || "";
+    const city = btn.getAttribute('data-city') || "";
+    
+ const prompt = `
+<system_role>
+Ты — опытный эксперт-логист компании AGS Europe. Твоя задача: составлять персонализированные бизнес-предложения для импортеров и экспортеров. Твой тон: профессиональный, уверенный, ориентированный на решение логистических болей.
+</system_role>
+
+<constraints>
+- ЯЗЫК: Простой деловой русский. Без воды, клише ("мы динамично развиваемся") и фраз "мы проанализировали ваш сайт".
+- ГЕОГРАФИЯ (Строго): Только Испания, Португалия, Франция, Германия, Бельгия, Италия, Нидерланды, Польша, Чехия. 
+- ТЕХНИЧЕСКИЕ ПАРАМЕТРЫ: Прямая контейнерная линия (Short Sea). Свой флот. Контейнеры 20' и 40' (DV, HC, Open Top, Flat Rack).
+- ЗАПРЕТ: Не предлагай другие регионы, даже если компания там работает.
+</constraints>
+
+<context_ags>
+Источник информации: https://www.agseurope.eu
+Ключевые преимущества для клиента:
+1. МАРШРУТ: Прямое морское плечо Роттердам <-> Санкт-Петербург. 
+2. ГРАФИК: Фиксированное еженедельное расписание.
+3. СЕРВИС: Забор груза (Pre-carriage) из любой точки Европы до порта Роттердам (свои офисы в Барселоне, Антверпене, Роттердаме, Санкт-Петербурге), свой скад в роттердаме.
+4. ТИПЫ ГРУЗОВ: Работаем с опасными (ADR), рефрижераторными и акцизными грузами. Имеем опыт в перевозке продуктов питания (масла, консервы).
+5. ТАМОЖНЯ: Помогаем избежать очередей на сухопутных границах ЕС-РФ, так как груз идет морем.
+Контакты: Наталья Кос (+32470115256).
+</context_ags>
+
+<client_data>
+Описание: ${desc}
+Сайт: ${site}
+Email/Контакт: ${email}
+Город (если указан Домодедово/Москва/СПб): ${city}
+</client_data>
+
+<naming_logic>
+При выборе обращения соблюдай строгий приоритет:
+1. Если найдено полное Имя или Имя Отчество директора/нач. ВЭД — используй их (например, "Екатерина Владимировна, добрый день!").
+2. Если в email (${email}) содержится имя (например, ivan@... или k.petrova@...), выдели его и используй (например, "Иван, добрый день!" или "Екатерина, добрый день!").
+3. Если имя нигде не найдено, используй профессиональное коллективное обращение: "Добрый день, команда [Название компании]!" или "Добрый день, коллеги из отдела логистики и ВЭД!".
+</naming_logic>
+
+<task>
+1. Используя Rusprofile, RBC Companies и Eximpedia, найди имя ЛПР (директор или нач. ВЭД), если не найдинно 
+2. Сформируй заголовок, который выделит письмо в почте.
+3. В тексте письма объясни, почему морская линия AGS — это решение проблем с задержками на границах и сохранностью их конкретного товара (например, вес масла или хрупкость консервов). Объясни чем хорош сам маршут.
+4. Акцентируй внимание на том, что мы — линейный оператор со своими судами, а не просто экспедитор.
+5. Если клиент в Москве/Домодедово/Санкт-Петербурге — подчеркни удобство доставки через порт СПб.
+6. Дай сноску по источникам данных.
+7. В конце напиши краткое пояснение (разъяснение) для меня, почему выбраны именно эти аргументы.
+</task>
+`;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      alert("Промпт скопирован в буфер обмена!");
+    });
+  };
+
+  window.generateEximpediaPrompt = function(btn) {
+    const site = btn.getAttribute('data-site') || "";
+    const email = btn.getAttribute('data-email') || "";
+    
+    const prompt = `найди на eximpedia.app ${site} ${email} дай анализ чем занимается комания`;
+
+    navigator.clipboard.writeText(prompt).then(() => {
+      alert("Запрос для Eximpedia скопирован!");
+    });
+  };
+
+  const key = "crm_columns";
+  const toggleInputs = document.querySelectorAll("[data-col-toggle]");
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; }
+  })();
+  const setVisible = (col, visible) => {
+    document.querySelectorAll(".col-" + col).forEach((el) => {
+      el.style.display = visible ? "" : "none";
+    });
+  };
+  toggleInputs.forEach((input) => {
+    const col = input.getAttribute("data-col-toggle");
+    const visible = saved[col] !== undefined ? saved[col] : true;
+    input.checked = visible;
+    setVisible(col, visible);
+    input.addEventListener("change", () => {
+      saved[col] = input.checked;
+      localStorage.setItem(key, JSON.stringify(saved));
+      setVisible(col, input.checked);
+    });
+  });
+</script>
+{% endblock %}

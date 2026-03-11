@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Пользователи</h2>
+  <a href="{{ url_for('user_new') }}" class="btn btn-primary">➕ Добавить пользователя</a>
+</div>
+
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Аватар</th>
+          <th>Имя пользователя</th>
+          <th>Роль</th>
+          <th>Дата создания</th>
+          <th class="text-end">Действия</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>
+            {% if user.avatar_url %}
+            <img src="{{ user.avatar_url }}" alt="" class="rounded-circle" width="32" height="32" style="object-fit: cover;">
+            {% else %}
+            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px;">
+              <i class="bi bi-person"></i>
+            </div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="fw-medium">{{ user.username }}</span>
+          </td>
+          <td>
+            {% if user.role == 'admin' %}
+            <span class="badge bg-primary">Администратор</span>
+            {% else %}
+            <span class="badge bg-secondary">Пользователь</span>
+            {% endif %}
+          </td>
+          <td class="text-muted small">{{ user.created_at|datetime }}</td>
+          <td class="text-end">
+            <div class="d-flex gap-2 justify-content-end">
+              <a href="{{ url_for('user_edit', user_id=user.id) }}" class="btn btn-sm btn-outline-secondary" title="Редактировать">✏️</a>
+              {% if user.username != 'admin' and user.id != session.user_id %}
+              <form action="{{ url_for('user_delete', user_id=user.id) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите удалить этого пользователя?');" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Удалить">🗑</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

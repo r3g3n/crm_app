@@ -1,0 +1,462 @@
+/* Modern Color Palette & Variables */
+:root {
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --secondary-color: #64748b;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+  --background-bg: #f8fafc;
+  --surface-bg: #ffffff;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --transition-base: all 0.2s ease-in-out;
+}
+
+/* Dark Mode Variables - Optimized Slate Palette */
+[data-bs-theme="dark"] {
+  --background-bg: #0f172a; /* Slate 900 */
+  --surface-bg: #1e293b; /* Slate 800 */
+  --text-primary: #f8fafc; /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --border-color: #334155; /* Slate 700 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.7);
+}
+
+[data-bs-theme="dark"] .navbar {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border-bottom-color: var(--border-color);
+}
+
+/* Logo Color Control */
+/* Light Mode: Turn white logo to Primary Blue (#4f46e5) */
+.navbar-brand img,
+.login-logo img {
+  filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(231deg) brightness(96%) contrast(92%);
+  transition: filter 0.3s ease;
+}
+
+/* Dark Mode: Keep logo white */
+[data-bs-theme="dark"] .navbar-brand img,
+[data-bs-theme="dark"] .login-logo img {
+  filter: brightness(0) invert(1);
+}
+
+[data-bs-theme="dark"] .table {
+  color: var(--text-secondary);
+}
+
+[data-bs-theme="dark"] .table thead th {
+  background-color: #1e293b;
+  color: var(--text-primary);
+  border-bottom-color: #475569;
+}
+
+[data-bs-theme="dark"] .table tbody tr {
+    background-color: #1e293b;
+    border-bottom-color: #334155;
+}
+
+[data-bs-theme="dark"] .table tbody tr:hover {
+  background-color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .form-control, 
+[data-bs-theme="dark"] .form-select {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: #475569;
+}
+
+[data-bs-theme="dark"] .form-control:focus, 
+[data-bs-theme="dark"] .form-select:focus {
+  background-color: #1e293b;
+  color: #f8fafc;
+  border-color: var(--primary-color);
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #94a3b8;
+}
+
+[data-bs-theme="dark"] .nav-link {
+  color: #94a3b8 !important;
+}
+
+[data-bs-theme="dark"] .nav-link:hover, 
+[data-bs-theme="dark"] .nav-link.active {
+    background-color: #334155;
+    color: #60a5fa !important; /* Lighter blue for dark mode */
+}
+
+[data-bs-theme="dark"] .copyable:hover {
+    background-color: #334155;
+    color: #818cf8;
+}
+
+[data-bs-theme="dark"] .user-badge {
+    background-color: #334155;
+    color: var(--text-primary);
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+}
+
+[data-bs-theme="dark"] .desc-cell:hover {
+    background-color: #1e293b;
+    color: var(--text-primary);
+    border-color: #475569;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--background-bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Navbar Improvements */
+.navbar {
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.navbar-brand span {
+  font-weight: 700;
+  color: var(--primary-color);
+  letter-spacing: -0.025em;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  transition: var(--transition-base);
+  border-radius: var(--radius-md);
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--primary-color) !important;
+  background-color: #eff6ff;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Card Modernization */
+.card {
+  border: none;
+  background-color: var(--surface-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+  overflow: visible; /* Changed for tooltip */
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  /* transform: translateY(-1px); Removed to prevent tooltip issues */
+}
+
+.card-header {
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Button Modernization - Raised/Plate Style */
+.btn {
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  overflow: visible;
+  /* Raised Effect Defaults */
+  border: 1px solid transparent; 
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Primary Button */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Outline/Secondary Buttons as White Plates */
+.btn-outline-primary, 
+.btn-outline-secondary, 
+.btn-outline-danger,
+.btn-light {
+  background-color: var(--surface-bg); /* White plate in light mode */
+  /* Keep border for definition, or remove if shadow is enough. User said "plate", usually implies solid. */
+}
+
+.btn-outline-primary {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.btn-outline-primary:hover {
+  background-color: #eef2ff;
+  color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+.btn-outline-secondary:hover {
+  background-color: #f8fafc;
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.btn-outline-danger {
+  color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+.btn-outline-danger:hover {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn-light:hover {
+  background-color: #fff;
+  border-color: var(--border-color);
+}
+
+/* Dark Mode Button Enhancements */
+[data-bs-theme="dark"] .btn-primary {
+  box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+}
+[data-bs-theme="dark"] .btn-primary:hover {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+  background-color: #334155;
+  color: #fff;
+  border-color: #64748b;
+  box-shadow: 0 0 15px rgba(148, 163, 184, 0.2);
+}
+
+[data-bs-theme="dark"] .btn-light {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+[data-bs-theme="dark"] .btn-light:hover {
+    background-color: #334155;
+    color: #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
+/* Table Enhancements */
+.table {
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--text-primary);
+}
+
+.table thead th {
+  background-color: #f8fafc;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+}
+
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.table td {
+  vertical-align: middle;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.925rem;
+}
+
+/* Form Controls */
+.form-control, .form-select {
+  border-color: var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  transition: var(--transition-base);
+  box-shadow: var(--shadow-sm);
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Custom Utilities */
+.copyable {
+  cursor: pointer;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  transition: var(--transition-base);
+  position: relative;
+}
+
+.copyable:hover {
+  background-color: #e0e7ff;
+  color: var(--primary-color);
+}
+
+.column-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.col-description {
+  max-width: 300px;
+}
+
+/* Tooltip for Description */
+.desc-cell {
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+  position: relative;
+}
+
+.desc-cell:hover {
+  white-space: normal;
+  overflow: visible;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1050;
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  min-width: 300px;
+  width: max-content;
+  max-width: 500px;
+}
+
+/* Login Page Specific */
+.login-container {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  border-radius: 1rem;
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Links & Badges */
+a {
+  text-decoration: none;
+  color: var(--primary-color);
+  transition: all 0.2s ease;
+  position: relative;
+  display: inline-block;
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Specific Link Overrides */
+.navbar-brand:hover {
+    text-shadow: 0 0 12px rgba(79, 70, 229, 0.3);
+    transform: none; /* Keep brand stable */
+}
+
+/* Dark Mode Links */
+[data-bs-theme="dark"] a:not(.btn) {
+    color: #f1f5f9; /* Slate 100 - more white */
+}
+
+[data-bs-theme="dark"] a:not(.btn):hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #818cf8, 0 0 30px #818cf8; /* White neon core with blue glow */
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.35em 0.65em;
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}

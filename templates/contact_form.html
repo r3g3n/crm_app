@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3">{{ 'Редактирование контакта' if contact else 'Новый контакт' }}</h1>
+<form method="post" class="card p-3">
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Город</label>
+      <input type="text" name="city" value="{{ contact.city if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Страна</label>
+      <input type="text" name="country" value="{{ contact.country if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Телефон</label>
+      <input type="text" name="phone" value="{{ contact.phone if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Телефон 2</label>
+      <input type="text" name="phone2" value="{{ contact.phone2 if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Сайт</label>
+      <input type="url" name="site" value="{{ contact.site if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" value="{{ contact.email if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email 2</label>
+      <input type="email" name="email2" value="{{ contact.email2 if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email 3</label>
+      <input type="email" name="email3" value="{{ contact.email3 if contact else '' }}" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Категория</label>
+      <input type="text" name="category" value="{{ contact.category if contact else '' }}" placeholder="Напр. оливки, табак, кофе" class="form-control">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Статус</label>
+      <select name="status" class="form-select">
+        {% set st = contact.status if contact else 'Новый' %}
+        {% for s in ['Новый','В работе','Переговоры','Отказ','Сделка'] %}
+        <option value="{{ s }}" {% if st == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Описание</label>
+      <textarea name="description" rows="6" class="form-control">{{ contact.description if contact else '' }}</textarea>
+    </div>
+    <div class="col-12 d-flex gap-2 mt-4 align-items-center flex-wrap">
+      <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+      <a class="btn btn-outline-secondary" href="{{ url_for('contacts') }}">❌ Отмена</a>
+      {% if contact %}
+      <a class="btn btn-outline-primary" href="{{ url_for('contact_view', contact_id=contact.id) }}">👁 Просмотр</a>
+      <div class="ms-auto">
+        <button type="button" class="btn btn-danger" onclick="if(confirm('Удалить контакт #{{ contact.id }}?')) document.getElementById('delete-form-{{ contact.id }}').submit();">🗑 Удалить</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+{% if contact %}
+<form id="delete-form-{{ contact.id }}" method="post" action="{{ url_for('contact_delete', contact_id=contact.id) }}" style="display: none;"></form>
+{% endif %}
+{% endblock %}

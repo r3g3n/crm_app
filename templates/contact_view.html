@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="h3">Контакт #{{ contact.id }}</h1>
+<div class="card p-3 mb-3">
+  <div class="row g-3">
+    <div class="col-md-6"><strong>Город:</strong> {{ contact.city }}</div>
+    <div class="col-md-6"><strong>Страна:</strong> {{ contact.country }}</div>
+    <div class="col-md-6"><strong>Телефон:</strong>
+      {% set p1_land = is_landline(contact.phone) %}
+      {% if contact.phone %}
+      <span class="copyable" data-copy="{{ format_phone(contact.phone) }}">{{ contact.phone|highlight_phone }}</span>
+      {% if not p1_land %}
+      <span class="ms-2">
+        <a href="{{ wa_link(contact.phone) }}" target="_blank">WA</a>
+        <a href="{{ tg_link(contact.phone) }}" target="_blank" class="ms-2">TG</a>
+      </span>
+      {% endif %}
+      {% endif %}
+    </div>
+    <div class="col-md-6"><strong>Телефон 2:</strong>
+      {% set p2_land = is_landline(contact.phone2) %}
+      {% if contact.phone2 %}
+      <span class="copyable" data-copy="{{ format_phone(contact.phone2) }}">{{ contact.phone2|highlight_phone }}</span>
+      {% if not p2_land and (not contact.phone or p1_land) %}
+      <span class="ms-2">
+        <a href="{{ wa_link(contact.phone2) }}" target="_blank">WA</a>
+        <a href="{{ tg_link(contact.phone2) }}" target="_blank" class="ms-2">TG</a>
+      </span>
+      {% endif %}
+      {% endif %}
+    </div>
+    <div class="col-md-6"><strong>Сайт:</strong>
+      {% if contact.site %}
+      <a href="{{ contact.site }}" target="_blank">{{ contact.site }}</a>
+      {% endif %}
+    </div>
+    <div class="col-md-6"><strong>Email:</strong> {{ contact.email }}</div>
+    <div class="col-md-6"><strong>Email 2:</strong> {{ contact.email2 }}</div>
+    <div class="col-md-6"><strong>Email 3:</strong> {{ contact.email3 }}</div>
+    <div class="col-md-6"><strong>Категория:</strong> {{ contact.category or '—' }}</div>
+    <div class="col-md-6"><strong>Статус:</strong> <span class="badge bg-{{ status_color(contact.status) }}">{{ contact.status }}</span></div>
+    <div class="col-12"><strong>Описание:</strong><br>{{ contact.description }}</div>
+  </div>
+  <div class="d-flex gap-2 mt-3">
+    <a class="btn btn-outline-primary" href="{{ url_for('contact_edit', contact_id=contact.id) }}">Редактировать</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('contacts') }}">К списку</a>
+  </div>
+</div>
+
+<h2 class="h5">Комментарии</h2>
+<form method="post" action="{{ url_for('add_comment', contact_id=contact.id) }}" class="card p-3 mb-3">
+  <textarea name="content" rows="3" placeholder="Новый комментарий..." required class="form-control mb-2"></textarea>
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">Добавить</button>
+  </div>
+  <div class="text-muted small mt-2">Используйте комментарии для фиксации этапов переговоров.</div>
+  </form>
+
+<ul class="list-group">
+  {% for c in comments %}
+  <li class="list-group-item d-flex justify-content-between align-items-start">
+    <div>
+      <div class="d-flex align-items-center text-muted small mb-1">
+        {% if c.avatar_url %}
+        <img src="{{ c.avatar_url }}" alt="{{ c.username }}" class="rounded-circle me-2" width="24" height="24" style="object-fit: cover;">
+        {% else %}
+        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2 text-white" style="width: 24px; height: 24px; font-size: 12px;">{{ c.username[0]|upper }}</div>
+        {% endif %}
+        {{ c.created_at|datetime }} — <strong>{{ c.username }}</strong>
+      </div>
+      <div>{{ c.content }}</div>
+    </div>
+    <form method="post" action="{{ url_for('delete_comment', comment_id=c.id) }}" onsubmit="return confirm('Удалить комментарий?');">
+      <button type="submit" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" title="Удалить">🗑</button>
+    </form>
+  </li>
+  {% else %}
+  <li class="list-group-item text-muted">Пока нет комментариев</li>
+  {% endfor %}
+</ul>
+{% endblock %}
