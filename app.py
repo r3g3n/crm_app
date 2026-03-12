@@ -36,6 +36,29 @@ def clean_html_content(content):
         return ""
     return content
 
+def strip_html_tags(content):
+    if not content:
+        return ""
+    # Replace block elements with newlines
+    content = re.sub(r'</p>', '\n', content)
+    content = re.sub(r'<br\s*/?>', '\n', content)
+    content = re.sub(r'</div>', '\n', content)
+    content = re.sub(r'</h1>', '\n', content)
+    content = re.sub(r'</h2>', '\n', content)
+    content = re.sub(r'</h3>', '\n', content)
+    content = re.sub(r'</li>', '\n', content)
+    
+    # Strip all tags
+    text = re.sub(r'<[^>]+>', '', content)
+    
+    # Unescape entities
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"')
+    
+    # Collapse multiple newlines and spaces
+    text = re.sub(r'\n\s*\n', '\n\n', text)
+    
+    return text.strip()
+
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "crm.db")
 CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Продукты 31fc9dfe7c6580bfaf40f2047928cacc.csv")
@@ -868,6 +891,10 @@ def create_app():
         if '/' in value:
             value = value.split('/')[0]
         return value
+
+    @app.template_filter('strip_tags')
+    def strip_tags_filter(value):
+        return strip_html_tags(value)
 
     @app.route("/comments/recent")
     @login_required

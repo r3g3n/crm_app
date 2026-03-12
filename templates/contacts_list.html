@@ -122,7 +122,7 @@
                   data-site="{{ r.site }}" 
                   data-email="{{ r.email }}" 
                   data-city="{{ r.city }}" 
-                  data-report="{{ r.detailed_report }}"
+                  data-report="{{ r.detailed_report|strip_tags }}"
                   data-bs-toggle="tooltip"
                   title="Создать промпт">🤖</button>
           <button class="btn btn-sm btn-outline-primary p-1 lh-1" onclick="generateEximpediaPrompt(this)" 
@@ -360,10 +360,10 @@
   // Prompt generation
   window.generateAGSPrompt = function(btn) {
     const desc = btn.getAttribute('data-desc') || "";
-    const site = btn.getAttribute('data-site') || "сайт компании";
-    const email = btn.getAttribute('data-email') || "";
-    const city = btn.getAttribute('data-city') || "";
-    const report = btn.getAttribute('data-report') || "";
+    const site = btn.getAttribute('data-site') || "Сайт";
+    const email = btn.getAttribute('data-email') || "Email";
+    const city = btn.getAttribute('data-city') || "Город";
+    const report = btn.getAttribute('data-report') || "Отчет";
 
     const prompt = `
 <system_role>
@@ -374,14 +374,15 @@
 Описание: ${desc}
 Отчет: ${report}
 Сайт: ${site}
-Email/Контакт: ${email}
+Email: ${email}
 Город (если указан Домодедово/Москва/СПб): ${city}
 </client_data>
 
 <constraints>
 - ЯЗЫК: Простой деловой русский. Без воды, клише ("мы динамично развиваемся") и фраз "мы проанализировали ваш сайт".
 - ГЕОГРАФИЯ (Строго): Только Испания, Португалия, Франция, Германия, Бельгия, Италия, Нидерланды, Польша, Чехия. 
-- ТЕХНИЧЕСКИЕ ПАРАМЕТРЫ: Прямая контейнерная линия (Short Sea). Свой флот. Контейнеры 20' и 40' (DV, HC, Open Top, Flat Rack).
+- МАРШРУТ Время маршрута Роттерадм - Санкт-Петербург 5-7 дней, в ротации постоянно 2 корабля, при большом сезоне больше.
+- ТЕХНИЧЕСКИЕ ПАРАМЕТРЫ: Прямая контейнерная линия (Short Sea). Свой флот. Контейнеры 20' и 40' (DV, HC, Open Top, Flat Rack) Делай акцент на 40 футов но можно и 20.
 - ЗАПРЕТ: Не предлагай другие регионы, даже если компания там работает.
 </constraints>
 
@@ -396,7 +397,7 @@ Email/Контакт: ${email}
 Мы предлагаем решения полного цикла для вашего бизнеса, стирая границы между Европой и Россией:
 
 1. **Прямое морское плечо Роттердам <-> Санкт-Петербург:**
-   * Стабильный контейнерный сервис на собственных судах по прямому маршруту Роттердам – Санкт-Петербург – Роттердам со строгим соблюдением графика выходов.
+   * Стабильный контейнерный сервис на собственных судах по прямому маршруту Роттердам – Санкт-Петербург – Роттердам со строгим соблюдением графика выходов, всегда упоминать Время маршрута Роттерадм - Санкт-Петербург 5-7 дней, в ротации постоянно 2 корабля и более.
 
 2. **Забор груза из любой точки Европы (Pre-carriage):**
    * Организация доставки груза автотранспортом, по железной дороге или баржами из любой локации Европы до порта или нашего собственного склада в Роттердаме.
