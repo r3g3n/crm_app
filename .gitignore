@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-crm.db
+*.db
 .env
 venv/
 .DS_Store
