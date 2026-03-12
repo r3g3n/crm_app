@@ -257,7 +257,7 @@
                     {% endif %}
                   </div>
                   
-                  <form action="{{ url_for('add_comment', contact_id=r.id) }}" method="post">
+                  <form action="{{ url_for('add_comment', contact_id=r.id) }}" method="post" onsubmit="submitComment(event, this)">
                     <input type="hidden" name="redirect_to" value="{{ request.url }}">
                     <div class="mb-3">
                       <textarea class="form-control" name="content" rows="3" placeholder="Введите комментарий..." required></textarea>
@@ -357,6 +357,78 @@
   </form>
 </div>
 <script>
+  function submitComment(event, form) {
+    event.preventDefault();
+
+    const formData = new FormData(form);
+    const url = form.action;
+    
+    const btn = form.querySelector('button[type="submit"]');
+    const originalText = btn.innerText;
+    btn.innerText = '...';
+    btn.disabled = true;
+
+    fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const chatContainer = form.previousElementSibling;
+        
+        const noComments = chatContainer.querySelector('.text-muted.text-center');
+        if (noComments) {
+            noComments.remove();
+        }
+
+        const comment = data.comment;
+        // Simple avatar logic based on data
+        let avatarHtml = '';
+        if (comment.avatar_url) {
+            avatarHtml = `<img src="${comment.avatar_url}" class="rounded-circle" width="32" height="32" alt="${comment.username}">`;
+        } else {
+            const initials = comment.username.substring(0, 2).toUpperCase();
+            avatarHtml = `<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 32px; height: 32px; font-size: 14px;">${initials}</div>`;
+        }
+
+        const html = `
+          <div class="d-flex mb-3">
+            <div class="flex-shrink-0">
+              ${avatarHtml}
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <div class="bg-light p-2 rounded">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <strong class="small">${comment.username}</strong>
+                  <small class="text-muted" style="font-size: 0.75rem;">только что</small>
+                </div>
+                <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">${comment.content}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        chatContainer.insertAdjacentHTML('afterbegin', html);
+        form.reset();
+      } else {
+        alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Ошибка при отправке комментария');
+    })
+    .finally(() => {
+      btn.innerText = originalText;
+      btn.disabled = false;
+    });
+  }
+
   // Prompt generation
   window.generateAGSPrompt = function(btn) {
     const desc = btn.getAttribute('data-desc') || "";

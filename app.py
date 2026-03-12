@@ -878,6 +878,21 @@ def create_app():
             db.execute("UPDATE contacts SET updated_at = ? WHERE id = ?", (now, contact_id))
             db.commit()
             
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.accept_mimetypes.accept_json:
+                # Return JSON with comment data
+                user_data = db.execute("SELECT username, avatar_url FROM users WHERE id=?", (user["id"],)).fetchone()
+                return {
+                    "success": True,
+                    "comment": {
+                        "username": user_data["username"],
+                        "avatar_url": user_data["avatar_url"],
+                        "content": content,
+                        "created_at": now,
+                        "user_id": user["id"]
+                    }
+                }
+            
         if redirect_target:
             return redirect(redirect_target)
             
