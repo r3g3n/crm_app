@@ -256,6 +256,7 @@ a:hover {
 
 .chat-bubble {
   max-width: 80%;
+  padding: 1rem;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   position: relative;
@@ -306,20 +307,20 @@ a:hover {
 }
 
 /* Custom Scrollbar for Chat */
-.chat-container::-webkit-scrollbar {
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.chat-container::-webkit-scrollbar-track {
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.chat-container::-webkit-scrollbar-thumb {
+.modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
 
-[data-bs-theme="dark"] .chat-container::-webkit-scrollbar-thumb {
+[data-bs-theme="dark"] .modal-dialog-scrollable .modal-body::-webkit-scrollbar-thumb {
   background-color: rgba(255, 255, 255, 0.2);
 }
 

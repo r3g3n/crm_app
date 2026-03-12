@@ -552,6 +552,16 @@ def create_app():
         # Let's sanitize here just in case old data exists or direct DB edits happened.
         return Markup(sanitize_html(value))
 
+    @app.template_filter('truncate_words')
+    def truncate_words(value, count=7, end='...'):
+        if not value:
+            return ""
+        words = value.split()
+        if len(words) <= count:
+            return value
+        return " ".join(words[:count]) + end
+
+
     @app.route("/")
     def root():
         return redirect(url_for("contacts"))
@@ -850,12 +860,21 @@ def create_app():
             
         return redirect(url_for("contact_view", contact_id=contact_id))
 
+    @app.template_filter('clean_url')
+    def clean_url(value):
+        if not value:
+            return ""
+        value = value.replace('https://', '').replace('http://', '').replace('www.', '')
+        if '/' in value:
+            value = value.split('/')[0]
+        return value
+
     @app.route("/comments/recent")
     @login_required
     def recent_comments():
         db = get_db()
         query = """
-            SELECT c.*, u.username, u.avatar_url, co.phone, co.email, co.description, co.status
+            SELECT c.*, u.username, u.avatar_url, co.phone, co.email, co.description, co.status, co.site
             FROM comments c
             JOIN users u ON c.user_id = u.id
             JOIN contacts co ON c.contact_id = co.id
@@ -868,7 +887,45 @@ def create_app():
         query += " ORDER BY c.created_at DESC LIMIT 50"
         
         comments = db.execute(query, tuple(params)).fetchall()
-        return render_template("recent_comments.html", comments=comments, status_color=status_color)
+        
+        # Fetch conversation history for unique contacts found in recent comments
+        contact_ids = list(set([c["contact_id"] for c in comments]))
+        comments_map = {}
+        contact_map = {}
+        
+        if contact_ids:
+            placeholders = ",".join("?" * len(contact_ids))
+            
+            # Fetch ALL comments for these contacts
+            hist_query = f"""
+                SELECT c.*, u.username, u.avatar_url 
+                FROM comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.contact_id IN ({placeholders}) 
+                ORDER BY c.created_at ASC
+            """
+            all_comments = db.execute(hist_query, contact_ids).fetchall()
+            
+            for c in all_comments:
+                cid = c["contact_id"]
+                if cid not in comments_map:
+                    comments_map[cid] = []
+                comments_map[cid].append(c)
+                
+            # Build contact map for modals
+            for c in comments:
+                cid = c["contact_id"]
+                if cid not in contact_map:
+                    contact_map[cid] = {
+                        "id": cid,
+                        "email": c["email"],
+                        "phone": c["phone"],
+                        "description": c["description"],
+                        "status": c["status"],
+                        "site": c["site"]
+                    }
+        
+        return render_template("recent_comments.html", comments=comments, status_color=status_color, comments_map=comments_map, contact_map=contact_map)
 
     @app.route("/comments/<int:comment_id>/delete", methods=["POST"])
     @login_required
