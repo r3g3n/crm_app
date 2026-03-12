@@ -26,23 +26,23 @@
         {% if session.get('user_id') %}
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item">
-            <a class="nav-link px-3" href="{{ url_for('contacts') }}">
+            <a class="nav-link px-3 {% if request.endpoint == 'contacts' %}active{% endif %}" href="{{ url_for('contacts') }}">
               <i class="bi bi-people me-1"></i> List
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link px-3" href="{{ url_for('recent_comments') }}">
+            <a class="nav-link px-3 {% if request.endpoint == 'recent_comments' %}active{% endif %}" href="{{ url_for('recent_comments') }}">
               <i class="bi bi-chat-left-text me-1"></i> Comments
             </a>
           </li>
           {% if session.get('role') == 'admin' %}
           <li class="nav-item">
-            <a class="nav-link px-3" href="{{ url_for('users_list') }}">
+            <a class="nav-link px-3 {% if request.endpoint == 'users_list' %}active{% endif %}" href="{{ url_for('users_list') }}">
               <i class="bi bi-people-fill me-1"></i> Users
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link px-3" href="{{ url_for('ai_generator') }}">
+            <a class="nav-link px-3 {% if request.endpoint == 'ai_generator' %}active{% endif %}" href="{{ url_for('ai_generator') }}">
               <i class="bi bi-robot me-1"></i> AI
             </a>
           </li>

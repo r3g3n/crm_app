@@ -101,8 +101,8 @@
           
           {% if not is_landline(show_phone) %}
           <div class="links mt-1">
-            <a href="{{ wa_link(show_phone) }}" target="_blank">WA</a>
-            <a href="{{ tg_link(show_phone) }}" target="_blank">TG</a>
+            <a href="{{ wa_link(show_phone) }}" target="_blank" class="badge-ear wa">WA</a>
+            <a href="{{ tg_link(show_phone) }}" target="_blank" class="badge-ear tg">TG</a>
           </div>
           {% endif %}
         {% endif %}
@@ -114,18 +114,23 @@
       </td>
       <td class="col-email">
         <div class="d-flex align-items-center gap-2">
-          <span class="copyable text-truncate" data-copy="{{ r.email }}" style="max-width: 150px; cursor: pointer;" title="Нажмите, чтобы скопировать">{{ r.email }}</span>
+          <span class="copyable text-truncate" data-copy="{{ r.email }}" style="max-width: 150px; cursor: pointer;" data-bs-toggle="tooltip" title="Нажмите, чтобы скопировать">{{ r.email }}</span>
           {% if r.email %}
-          <button class="btn btn-sm btn-light border p-1 lh-1" onclick="generatePrompt(this)" 
+          {% if session.get('role') in ['admin', 'manager'] %}
+          <button class="btn btn-sm btn-outline-primary p-1 lh-1" onclick="generateAGSPrompt(this)" 
                   data-desc="{{ r.description }}" 
                   data-site="{{ r.site }}" 
                   data-email="{{ r.email }}" 
                   data-city="{{ r.city }}" 
+                  data-report="{{ r.detailed_report }}"
+                  data-bs-toggle="tooltip"
                   title="Создать промпт">🤖</button>
-          <button class="btn btn-sm btn-light border p-1 lh-1" onclick="generateEximpediaPrompt(this)" 
+          <button class="btn btn-sm btn-outline-primary p-1 lh-1" onclick="generateEximpediaPrompt(this)" 
                   data-site="{{ r.site }}" 
                   data-email="{{ r.email }}" 
+                  data-bs-toggle="tooltip"
                   title="Анализ на Eximpedia">🎯</button>
+          {% endif %}
           {% endif %}
         </div>
       </td>
@@ -134,11 +139,11 @@
         <span class="badge bg-{{ status_color(r.status) }}">{{ r.status }}</span>
       </td>
       <td class="col-description position-relative">
-        <div class="desc-cell">{{ r.description|striptags|truncate(100) }}</div>
+        <div class="desc-cell">{{ r.description|striptags }}</div>
       </td>
       <td class="col-actions">
         <div class="d-flex gap-2 justify-content-center align-items-center">
-          <a class="btn btn-sm btn-outline-primary position-relative" href="{{ url_for('contact_view', contact_id=r.id) }}" title="Открыть">
+          <a class="btn btn-sm btn-outline-primary position-relative" href="{{ url_for('contact_view', contact_id=r.id) }}" data-bs-toggle="tooltip" title="Открыть">
             👁
             {% if r.comment_count > 0 %}
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
@@ -146,16 +151,23 @@
             </span>
             {% endif %}
           </a>
-          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contact_edit', contact_id=r.id) }}" title="Редактировать">✏️</a>
+          {% if session.get('role') in ['admin', 'manager'] %}
+          <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contact_edit', contact_id=r.id) }}" data-bs-toggle="tooltip" title="Редактировать">✏️</a>
+          {% endif %}
           {% if r.detailed_report %}
-          <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#reportModal{{ r.id }}" title="Анализ на Eximpedia">📊</button>
+          <span data-bs-toggle="tooltip" title="Анализ на Eximpedia" tabindex="0">
+            <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#reportModal{{ r.id }}">📊</button>
+          </span>
           
           <!-- Report Modal -->
           <div class="modal fade" id="reportModal{{ r.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title">Детальный отчет: {{ r.site or 'Компания' }}</h5>
+                  <h5 class="modal-title">
+                    <span class="fs-6 text-muted me-2">Детальный отчет:</span>
+                    <span class="fs-4 fw-bold text-primary">{{ r.site|clean_url or 'Компания' }}</span>
+                  </h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-start">
@@ -167,12 +179,113 @@
             </div>
           </div>
           {% endif %}
+          
+          {% if r.first_mail %}
+          <span data-bs-toggle="tooltip" title="Первое письмо" tabindex="0">
+            <button type="button" class="btn btn-sm btn-warning text-white" data-bs-toggle="modal" data-bs-target="#firstMailModal{{ r.id }}">📧</button>
+          </span>
+          
+          <!-- First Mail Modal -->
+          <div class="modal fade" id="firstMailModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">
+                    <span class="fs-6 text-muted me-2">Первое письмо:</span>
+                    <span class="fs-4 fw-bold text-primary">{{ r.site|clean_url or 'Компания' }}</span>
+                  </h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                  <div class="first-mail-content mb-3" id="firstMailContent{{ r.id }}">
+                    {{ r.first_mail|safe }}
+                  </div>
+                  <button type="button" class="btn btn-primary" onclick="copyToClipboard(document.getElementById('firstMailContent{{ r.id }}').innerText)">📋 Копировать в буфер</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <span data-bs-toggle="tooltip" title="Добавить комментарий" tabindex="0">
+            <button type="button" class="btn btn-sm btn-success text-white" data-bs-toggle="modal" data-bs-target="#commentModal{{ r.id }}">💬</button>
+          </span>
+
+          <!-- Comment Modal -->
+          <div class="modal fade" id="commentModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">
+                  <span class="fs-6 text-muted me-2">Комментарии:</span>
+                  <span class="fs-4 fw-bold text-primary">{{ r.site|clean_url or 'Компания' }}</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+                <div class="modal-body text-start">
+                  {% set comments = comments_map.get(r.id, []) %}
+                  <div class="chat-container mb-3 p-3 rounded" style="max-height: 400px; overflow-y: auto;">
+                    {% if comments %}
+                      {% for comment in comments %}
+                        {% set is_me = (comment.user_id == session.get('user_id')) %}
+                        {% if is_me %}
+                        <div class="d-flex mb-3 w-100 justify-content-end">
+                            <div class="chat-bubble me p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
+                                  <strong class="chat-username">{{ comment.username }}</strong>
+                                  <small class="chat-meta">{{ comment.created_at.replace('T', ' ')[:16] }}</small>
+                                </div>
+                                <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|urlize(target='_blank') }}</p>
+                            </div>
+                            <img src="{{ comment.avatar_url or 'https://www.gravatar.com/avatar/?d=mp' }}" class="rounded-circle ms-2" width="35" height="35" style="object-fit: cover;">
+                        </div>
+                        {% else %}
+                        <div class="d-flex mb-3 w-100 justify-content-start">
+                            <img src="{{ comment.avatar_url or 'https://www.gravatar.com/avatar/?d=mp' }}" class="rounded-circle me-2" width="35" height="35" style="object-fit: cover;">
+                            <div class="chat-bubble other p-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1 gap-2">
+                                  <strong class="chat-username">{{ comment.username }}</strong>
+                                  <small class="chat-meta">{{ comment.created_at.replace('T', ' ')[:16] }}</small>
+                                </div>
+                                <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|urlize(target='_blank') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                      {% endfor %}
+                    {% else %}
+                      <p class="text-muted text-center small my-4">Нет комментариев</p>
+                    {% endif %}
+                  </div>
+                  
+                  <form action="{{ url_for('add_comment', contact_id=r.id) }}" method="post">
+                    <input type="hidden" name="redirect_to" value="{{ request.url }}">
+                    <div class="mb-3">
+                      <textarea class="form-control" name="content" rows="3" placeholder="Введите комментарий..." required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                      <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Отмена</button>
+                      <button type="submit" class="btn btn-primary">Отправить</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<script>
+  function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Текст скопирован в буфер обмена!");
+    }).catch(err => {
+      console.error('Ошибка копирования: ', err);
+    });
+  }
+</script>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-3 gap-3">
   <nav aria-label="Page navigation">
     <ul class="pagination mb-0 flex-wrap justify-content-center">
@@ -245,16 +358,25 @@
 </div>
 <script>
   // Prompt generation
-  window.generatePrompt = function(btn) {
-    const desc = btn.getAttribute('data-desc') || "клиента";
+  window.generateAGSPrompt = function(btn) {
+    const desc = btn.getAttribute('data-desc') || "";
     const site = btn.getAttribute('data-site') || "сайт компании";
     const email = btn.getAttribute('data-email') || "";
     const city = btn.getAttribute('data-city') || "";
-    
- const prompt = `
+    const report = btn.getAttribute('data-report') || "";
+
+    const prompt = `
 <system_role>
-Ты — опытный эксперт-логист компании AGS Europe. Твоя задача: составлять персонализированные бизнес-предложения для импортеров и экспортеров. Твой тон: профессиональный, уверенный, ориентированный на решение логистических болей.
+Ты — опытный маркетолог / логист компании AGS Europe. Твоя задача: составлять первое холодное письмо для импортеров и экспортеров. Твой тон: профессиональный, уверенный, краткий, без клише и хвастовства.
 </system_role>
+
+<client_data>
+Описание: ${desc}
+Отчет: ${report}
+Сайт: ${site}
+Email/Контакт: ${email}
+Город (если указан Домодедово/Москва/СПб): ${city}
+</client_data>
 
 <constraints>
 - ЯЗЫК: Простой деловой русский. Без воды, клише ("мы динамично развиваемся") и фраз "мы проанализировали ваш сайт".
@@ -263,23 +385,41 @@
 - ЗАПРЕТ: Не предлагай другие регионы, даже если компания там работает.
 </constraints>
 
-<context_ags>
-Источник информации: https://www.agseurope.eu
-Ключевые преимущества для клиента:
-1. МАРШРУТ: Прямое морское плечо Роттердам <-> Санкт-Петербург. 
-2. ГРАФИК: Фиксированное еженедельное расписание.
-3. СЕРВИС: Забор груза (Pre-carriage) из любой точки Европы до порта Роттердам (свои офисы в Барселоне, Антверпене, Роттердаме, Санкт-Петербурге), свой скад в роттердаме.
-4. ТИПЫ ГРУЗОВ: Работаем с опасными (ADR), рефрижераторными и акцизными грузами. Имеем опыт в перевозке продуктов питания (масла, консервы).
-5. ТАМОЖНЯ: Помогаем избежать очередей на сухопутных границах ЕС-РФ, так как груз идет морем.
-Контакты: Наталья Кос (+32470115256).
-</context_ags>
+<thinking>
+Перед выполнением задачи проанализируй вводные данные.
+1. Пойми цель: Составить идеальное холодное письмо для Сайт на Email
+2. Определи ключевые ограничения и требования.
+3. Составь пошаговый план на основе предоставленного алгоритма.
+</thinking>
 
-<client_data>
-Описание: ${desc}
-Сайт: ${site}
-Email/Контакт: ${email}
-Город (если указан Домодедово/Москва/СПб): ${city}
-</client_data>
+<context_ags>
+Мы предлагаем решения полного цикла для вашего бизнеса, стирая границы между Европой и Россией:
+
+1. **Прямое морское плечо Роттердам <-> Санкт-Петербург:**
+   * Стабильный контейнерный сервис на собственных судах по прямому маршруту Роттердам – Санкт-Петербург – Роттердам со строгим соблюдением графика выходов.
+
+2. **Забор груза из любой точки Европы (Pre-carriage):**
+   * Организация доставки груза автотранспортом, по железной дороге или баржами из любой локации Европы до порта или нашего собственного склада в Роттердаме.
+
+3. **Работа со сложными и специализированными грузами:**
+   * Перевозка опасных грузов (**ADR**).
+   * Транспортировка грузов с температурным режимом (рефрижераторные контейнеры).
+   * Работа с подакцизными товарами.
+   * Большой подтвержденный опыт в перевозке **продуктов питания** (включая пищевые масла, консервы и др.).
+   * Доставка продуктов питания от вашего завода или скалада до порта Роттердам ЖД, и далее фрахт в Санкт-Петербург
+
+4. **Работа с проектными и нестандартными грузами:**
+   * Регулярная доставка генеральных (Break Bulk) и негабаритных (OOG) грузов.
+
+5. **Складские и таможенные операции:**
+   * Полное документальное и таможенное сопровождение при импорте, экспорте и транзите, консолидация на собственном складе в Роттердаме.
+
+### 📞 Контакты для связи
+
+**Наталья Кос (Natalia Kos)** 📞 **Телефон / WhatsApp:** +32 470 11 52 56 
+✉️ **Email:** n.kosorukova@agseurope.eu 
+🔗 **LinkedIn:** https://www.linkedin.com/in/natalia-kos/
+</context_ags>
 
 <naming_logic>
 При выборе обращения соблюдай строгий приоритет:
@@ -289,13 +429,13 @@ Email/Контакт: ${email}
 </naming_logic>
 
 <task>
-1. Используя Rusprofile, RBC Companies и Eximpedia, найди имя ЛПР (директор или нач. ВЭД), если не найдинно 
-2. Сформируй заголовок, который выделит письмо в почте.
-3. В тексте письма объясни, почему морская линия AGS — это решение проблем с задержками на границах и сохранностью их конкретного товара (например, вес масла или хрупкость консервов). Объясни чем хорош сам маршут.
-4. Акцентируй внимание на том, что мы — линейный оператор со своими судами, а не просто экспедитор.
-5. Если клиент в Москве/Домодедово/Санкт-Петербурге — подчеркни удобство доставки через порт СПб.
+1. Проанализируй Отчет сопоставь его с context_ags
+2. Сформируй заголовок используя name_logic, который выделит письмо в почте, если есть возможные пересечения на выставках используй это.
+3. В тексте письма объясни, почему морская линия AGS — это решение проблем с задержками на границах и сохранностью их конкретного товара. Объясни чем хорош сам маршрут.
+4. Акцентируй внимание на том, что мы — линейный оператор со своими судами, а не просто экспедитор, и не будет переплат за посредников.
+5. Определи где офис или склад компании из Отчет или из поиска — подчеркни скорость и цену доставки через порт СПб
 6. Дай сноску по источникам данных.
-7. В конце напиши краткое пояснение (разъяснение) для меня, почему выбраны именно эти аргументы.
+7. В конце напиши краткое пояснение (разъяснение) для меня, почему выбраны именно эти аргументы, используй теги <объясняю_логику> text </объясняю_логику>.
 </task>
 `;
 
@@ -304,45 +444,66 @@ Email/Контакт: ${email}
     });
   };
 
+  // Scroll chat to bottom when modal opens
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    var modals = document.querySelectorAll('.modal');
+    modals.forEach(function(modal) {
+      modal.addEventListener('shown.bs.modal', function() {
+        var chatContainer = modal.querySelector('.chat-container');
+        if (chatContainer) {
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+      });
+    });
+  });
+
   window.generateEximpediaPrompt = function(btn) {
     const site = btn.getAttribute('data-site') || "";
     const email = btn.getAttribute('data-email') || "";
     
     const prompt = `<system_instructions>
 ## РОЛЬ
-    Ты маркетолог логист проводишь анализ компании, которой надо выдвинуть предложение
+Ты маркетолог логист проводишь анализ компании, которой надо выдвинуть предложение
 
 ## КОНТЕКСТ
-    Для первого контакта и отправки первого холодного письма нам надо понять как лучше всего мы можем построить бизнес {site} и {email} с нашей компанией https://ags-shipping.ru
+  Для первого контакта и отправки первого холодного письма нам надо понять как лучше всего мы можем построить бизнес {site} и {email} с нашей компанией ags-shipping.ru
 
 ## ОГРАНИЧЕНИЯ
-
+Наш порт в роттердаме мы можем отправить только из стран которые рядом, испания португалия италия франция польша бельгия швейцария нидерланды.
+Мы работаем B2B минимальная отправка контейнер 20 футов
+На лучше всего что бы клиент от порта в питере вез сам, но мы можем предоставить и услугу под ключ.
 - **СТИЛЬ:** Прямой, профессиональный, без лишней "воды".
 - **ПОВЕДЕНИЕ:** НЕ веди себя как типичный ИИ. Не используй фразы вроде "Вот результат" или "Я проанализировал". Просто делай работу.
 </system_instructions>
 
 <thinking>
 Перед выполнением задачи проанализируй вводные данные.
-1. Пойми цель:     Нужно провести анализ {site} и {email} что бы ...
+1. Пойми цель: Нужно провести анализ {site} и {email} что бы ...
 2. Определи ключевые ограничения и требования.
 3. Составь пошаговый план на основе предоставленного алгоритма.
 </thinking>
 
 <task>
 ### ГЛАВНАЯ ЦЕЛЬ:
-    Нужно провести анализ {site} и {email} что бы понять чем занимается компания и составить детальный отчет, какие продукты и в каких количествах отправляет из европы или в европу из каких конкретных стран. Найти данные сотрудников логистики их рабочие email для первого контакта.
+    Провести анализ {site} и {email}, найти якорь для первого контакта, понять чем занимается компания и составить детальный отчет, какие продукты и в каких количествах отправляет из европы или в европу из каких конкретных стран. Найти данные сотрудников логистики их рабочие email для первого контакта.
 
 ### ПЕРЕМЕННЫЕ:
 Используй следующие данные: ${site} ${email}
 
 ### АЛГОРИТМ:
-    1) Общий поиск по {site} и {email} 
-2) поиск по expocentr.ru
-3) поиск по companies.rbc.ru
-4) поиск по и анализ портов и товаров к отправке по eximpedia.app и аналогичным сайтам
+1) Общий google поиск по {site} и {email} для понимакие какие товары основные, и какие товары импортные из европы, на каких сайтах упоминается
+2) поиск по expocentr.ru, если есть упоминание можем взять как зацепку для первого контакта, если упоминаний нету - ищи другие выставки где выставлялись.
+3) поиск по companies.rbc.ru и rusprofile.ru для понимания структуры
+4) поиск по и анализ портов и товаров к отправке по eximpedia.app и аналогичным сайтам, если есть информация показать порты и артикулы продуктов
 5) определение email на которые можно написать с именем фамилией человека
 6) дополнительный поиск на основе уже полученных данных выше
-7) вывести отчет
+7) вывести отчет с рекомендациями по первому контакту
 
 ### ФОРМАТ ВЫВОДА:
 Предоставь результат в структурированном формате.

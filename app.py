@@ -22,7 +22,19 @@ ALLOWED_ATTRIBUTES = {
     'p': ['class']
 }
 
-
+def clean_html_content(content):
+    if not content:
+        return ""
+    # Strip whitespace
+    content = content.strip()
+    # Check for empty Quill output
+    if content in ['<p><br></p>', '<p><br/></p>', '<br>']:
+        return ""
+    # More advanced check: strip tags and check if empty
+    text_content = re.sub(r'<[^>]+>', '', content).strip()
+    if not text_content and '<img' not in content:
+        return ""
+    return content
 
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "crm.db")
@@ -89,13 +101,19 @@ def create_app():
                 updated_by INTEGER,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
-                detailed_report TEXT
+                detailed_report TEXT,
+                first_mail TEXT
             );
             """
         )
         # Ensure detailed_report column exists (migration for existing dbs)
         try:
             db.execute("ALTER TABLE contacts ADD COLUMN detailed_report TEXT")
+        except sqlite3.OperationalError:
+            pass # Column already exists
+        # Ensure first_mail column exists (migration for existing dbs)
+        try:
+            db.execute("ALTER TABLE contacts ADD COLUMN first_mail TEXT")
         except sqlite3.OperationalError:
             pass # Column already exists
         db.execute(
@@ -187,7 +205,12 @@ def create_app():
                 # Safe access for role
                 session["role"] = row["role"] if "role" in row.keys() else "user"
                 session["avatar_url"] = row["avatar_url"]
-                return redirect(url_for("contacts"))
+                
+                # Check for next URL or default to contacts
+                next_url = request.args.get("next")
+                if not next_url or not next_url.startswith("/"):
+                    next_url = url_for("contacts")
+                return redirect(next_url)
             flash("Неверный логин или пароль", "error")
         return render_template("login.html")
 
@@ -538,8 +561,28 @@ def create_app():
     def contacts():
         db = get_db()
         q = request.args.get("q", "").strip()
-        status_filter = request.args.get("status", "").strip()
-        sort_by = request.args.get("sort", "id").strip()
+        
+        # Determine Status Filter
+        # If explicitly provided in URL, use it and save to session
+        if "status" in request.args:
+            status_filter = request.args.get("status", "").strip()
+            session["last_status"] = status_filter
+        # If searching and no status provided, default to All (Global Search)
+        elif q:
+            status_filter = ""
+        # Otherwise, load from session or default to 'В работе'
+        else:
+            status_filter = session.get("last_status", "В работе")
+            
+        # Determine Sort Order
+        # If explicitly provided in URL, use it and save to session
+        if "sort" in request.args:
+            sort_by = request.args.get("sort", "id").strip()
+            session["last_sort"] = sort_by
+        # Otherwise, load from session or default to 'id'
+        else:
+            sort_by = session.get("last_sort", "id")
+            
         page = max(1, int(request.args.get("page", 1) or 1))
         try:
             per_page = int(request.args.get("per_page", 50))
@@ -623,6 +666,24 @@ def create_app():
         """
         rows = db.execute(data_sql, tuple(params + [per_page, offset])).fetchall()
         
+        # Fetch comments for the current page of contacts
+        contact_ids = [r["id"] for r in rows]
+        comments_map = {}
+        if contact_ids:
+            placeholders = ",".join("?" * len(contact_ids))
+            comments_query = f"""
+                SELECT c.*, u.username, u.avatar_url 
+                FROM comments c 
+                JOIN users u ON c.user_id = u.id 
+                WHERE c.contact_id IN ({placeholders}) 
+                ORDER BY c.created_at ASC
+            """
+            all_comments = db.execute(comments_query, contact_ids).fetchall()
+            for c in all_comments:
+                if c["contact_id"] not in comments_map:
+                    comments_map[c["contact_id"]] = []
+                comments_map[c["contact_id"]].append(c)
+        
         # Get unique statuses for the filter dropdown
         statuses = db.execute("SELECT DISTINCT status FROM contacts WHERE status IS NOT NULL AND status != '' ORDER BY status").fetchall()
         statuses = [s["status"] for s in statuses]
@@ -635,7 +696,7 @@ def create_app():
         if session.get("role") == "restricted" and not q and not status_filter:
              status_filter = "В работе"
 
-        return render_template("contacts_list.html", rows=rows, q=q, status_filter=status_filter, sort_by=sort_by, statuses=statuses, page=page, pages=pages, total=total, wa_link=wa_link, tg_link=tg_link, format_phone=format_phone, status_color=status_color, per_page=per_page)
+        return render_template("contacts_list.html", rows=rows, q=q, status_filter=status_filter, sort_by=sort_by, statuses=statuses, page=page, pages=pages, total=total, wa_link=wa_link, tg_link=tg_link, format_phone=format_phone, status_color=status_color, per_page=per_page, comments_map=comments_map)
 
     @app.route("/contacts/new", methods=["GET", "POST"])
     @login_required
@@ -718,8 +779,9 @@ def create_app():
                 "email": request.form.get("email","").strip(),
                 "email2": request.form.get("email2","").strip(),
                 "email3": request.form.get("email3","").strip(),
-                "description": request.form.get("description","").strip(),
-                "detailed_report": request.form.get("detailed_report","").strip(),
+                "description": clean_html_content(request.form.get("description","")),
+                "detailed_report": clean_html_content(request.form.get("detailed_report","")),
+                "first_mail": clean_html_content(request.form.get("first_mail","")),
                 "category": request.form.get("category","").strip(),
                 "status": request.form.get("status","").strip(),
             }
@@ -727,10 +789,10 @@ def create_app():
             user = current_user()
             db.execute(
                 """
-                UPDATE contacts SET city=?,country=?,phone=?,phone2=?,site=?,email=?,email2=?,email3=?,description=?,detailed_report=?,category=?,status=?,updated_by=?,updated_at=?
+                UPDATE contacts SET city=?,country=?,phone=?,phone2=?,site=?,email=?,email2=?,email3=?,description=?,detailed_report=?,first_mail=?,category=?,status=?,updated_by=?,updated_at=?
                 WHERE id=?
                 """,
-                (data["city"],data["country"],data["phone"],data["phone2"],data["site"],data["email"],data["email2"],data["email3"],data["description"],data["detailed_report"],data["category"],data["status"],user["id"],now,contact_id)
+                (data["city"],data["country"],data["phone"],data["phone2"],data["site"],data["email"],data["email2"],data["email3"],data["description"],data["detailed_report"],data["first_mail"],data["category"],data["status"],user["id"],now,contact_id)
             )
             db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
                        (contact_id,user["id"],"update","",now))
@@ -772,6 +834,8 @@ def create_app():
         db = get_db()
         user = current_user()
         content = request.form.get("content","").strip()
+        redirect_target = request.form.get("redirect_to")
+        
         if content:
             now = datetime.utcnow().isoformat()
             db.execute("INSERT INTO comments(contact_id,user_id,content,created_at) VALUES(?,?,?,?)",
@@ -780,6 +844,10 @@ def create_app():
                        (contact_id,user["id"],"comment","",now))
             db.execute("UPDATE contacts SET updated_at = ? WHERE id = ?", (now, contact_id))
             db.commit()
+            
+        if redirect_target:
+            return redirect(redirect_target)
+            
         return redirect(url_for("contact_view", contact_id=contact_id))
 
     @app.route("/comments/recent")

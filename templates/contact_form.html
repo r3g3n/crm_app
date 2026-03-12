@@ -60,6 +60,12 @@
       <div id="report-editor" style="height: 300px;" class="bg-body">{{ contact.detailed_report|safe if contact and contact.detailed_report else '' }}</div>
     </div>
 
+    <div class="col-12">
+      <label class="form-label">Первое письмо (First Mail)</label>
+      <input type="hidden" name="first_mail" id="first-mail-input">
+      <div id="first-mail-editor" style="height: 300px;" class="bg-body">{{ contact.first_mail|safe if contact and contact.first_mail else '' }}</div>
+    </div>
+
     <div class="col-12 d-flex gap-2 mt-4 align-items-center flex-wrap">
       <button type="submit" class="btn btn-primary" id="save-btn">💾 Сохранить</button>
       <a class="btn btn-outline-secondary" href="{{ url_for('contacts') }}">❌ Отмена</a>
@@ -137,12 +143,42 @@
       }
     });
 
+    var quillFirstMail = new Quill('#first-mail-editor', {
+      theme: 'snow',
+      placeholder: 'Вставьте текст первого письма...',
+      modules: {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'header': 1 }, { 'header': 2 }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'script': 'sub'}, { 'script': 'super' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            [{ 'direction': 'rtl' }],
+            [{ 'size': ['small', false, 'large', 'huge'] }],
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'font': [] }],
+            [{ 'align': [] }],
+            ['clean'],
+            ['link', 'image'],
+            ['emoji']
+          ]
+        },
+        "emoji-toolbar": true,
+        "emoji-textarea": false,
+        "emoji-shortname": true,
+      }
+    });
+
     // Populate hidden input on submit
     var form = document.querySelector('form.card');
     form.onsubmit = function() {
       // Get HTML content
       document.querySelector('#description-input').value = quill.root.innerHTML;
       document.querySelector('#report-input').value = quillReport.root.innerHTML;
+      document.querySelector('#first-mail-input').value = quillFirstMail.root.innerHTML;
     };
   });
 </script>

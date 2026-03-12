@@ -23,11 +23,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-medium">Контекст (Бэкграунд)</label>
-                            <textarea class="form-control" id="context" rows="3" placeholder="Опиши компанию, проект или текущую ситуацию..."></textarea>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label fw-medium">Задача (Что сделать?)</label>
                             <textarea class="form-control" id="task" rows="3" placeholder="Конкретный результат, который нужно получить..."></textarea>
                         </div>
@@ -105,9 +100,11 @@
         }
     };
 
+    function insertSchema() {
+    }
+
     function generatePrompt() {
         const role = document.getElementById('role').value || "AI ассистент";
-        const context = document.getElementById('context').value || "";
         const task = document.getElementById('task').value || "";
         const steps = document.getElementById('steps').value || "";
         const constraints = document.getElementById('constraints').value || "";
@@ -121,9 +118,6 @@
         const prompt = `<system_instructions>
 ## РОЛЬ
 ${role}
-
-## КОНТЕКСТ
-${context}
 
 ## ОГРАНИЧЕНИЯ
 ${constraints}
@@ -147,6 +141,9 @@ ${task}
 
 ### АЛГОРИТМ:
 ${steps}
+
+### ОГРАНИЧЕНИЯ И ЗАПРЕТЫ:
+${constraints}
 
 ### ФОРМАТ ВЫВОДА:
 Предоставь результат в структурированном формате.

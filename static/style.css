@@ -12,12 +12,25 @@
   --text-primary: #1e293b;
   --text-secondary: #64748b;
   --border-color: #e2e8f0;
+  
+  /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-neon: 0 0 10px rgba(79, 70, 229, 0.3);
+  
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --transition-base: all 0.2s ease-in-out;
+
+  /* Chat Variables - Light Mode (Theme Based) */
+  --chat-bg: transparent;
+  --chat-bubble-me: var(--primary-color);
+  --chat-bubble-other: #ffffff;
+  --chat-text-me: #ffffff;
+  --chat-text-other: var(--text-primary);
+  --chat-meta-me: rgba(255, 255, 255, 0.8);
+  --chat-meta-other: var(--text-secondary);
 }
 
 body {
@@ -26,53 +39,134 @@ body {
     color: var(--text-primary);
 }
 
-/* Dark Mode Variables - Optimized Slate Palette */
+/* Link Styles */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: var(--transition-base);
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: underline;
+}
+
+/* "Ears" (WA/TG Badges) */
+.badge-ear {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff !important;
+  border-radius: 20px;
+  text-decoration: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: var(--transition-base);
+  margin-right: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-ear:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.badge-ear.wa {
+  background-color: #25D366; /* WhatsApp Green */
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+}
+
+.badge-ear.wa:hover {
+  box-shadow: 0 0 10px rgba(37, 211, 102, 0.5); /* Green Glow */
+}
+
+.badge-ear.tg {
+  background-color: #0088cc; /* Telegram Blue */
+  background: linear-gradient(135deg, #2AABEE 0%, #229ED9 100%);
+}
+
+.badge-ear.tg:hover {
+  box-shadow: 0 0 10px rgba(42, 171, 238, 0.5); /* Blue Glow */
+}
+
+
+/* Dark Mode Variables - Neon & Shadow Enhanced */
 [data-bs-theme="dark"] {
   --background-bg: #0f172a; /* Slate 900 */
   --surface-bg: #1e293b; /* Slate 800 */
   --text-primary: #f8fafc; /* Slate 50 */
   --text-secondary: #94a3b8; /* Slate 400 */
   --border-color: #334155; /* Slate 700 */
+  
+  /* Enhanced Shadows for Dark Mode */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.7);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.7), 0 0 15px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px -3px rgb(0 0 0 / 0.8), 0 0 20px rgba(79, 70, 229, 0.15); /* Slight neon glow */
+  --shadow-neon: 0 0 15px rgba(79, 70, 229, 0.6);
+
+  /* Chat Variables - Dark Mode (Theme Based) */
+  --chat-bg: transparent;
+  --chat-bubble-me: var(--primary-color);
+  --chat-bubble-other: #1e293b;
+  --chat-text-me: #ffffff;
+  --chat-text-other: var(--text-primary);
+  --chat-meta-me: rgba(255, 255, 255, 0.8);
+  --chat-meta-other: var(--text-secondary);
+}
+
+/* Dark Mode Links */
+[data-bs-theme="dark"] a:not(.btn) {
+  color: #818cf8;
+}
+
+[data-bs-theme="dark"] a:not(.btn):hover {
+    color: #ffffff;
+    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #818cf8, 0 0 30px #818cf8;
 }
 
 [data-bs-theme="dark"] .navbar {
-  background-color: rgba(30, 41, 59, 0.95) !important;
-  border-bottom-color: var(--border-color);
+  background-color: rgba(15, 23, 42, 0.95) !important; /* Darker navbar */
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* Logo Color Control */
-/* Light Mode: Turn white logo to Primary Blue (#4f46e5) */
 .navbar-brand img,
 .login-logo img {
   filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(231deg) brightness(96%) contrast(92%);
   transition: filter 0.3s ease;
 }
 
-/* Dark Mode: Keep logo white */
 [data-bs-theme="dark"] .navbar-brand img,
 [data-bs-theme="dark"] .login-logo img {
-  filter: brightness(0) invert(1);
+  filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.5)); /* Neon glow on logo */
 }
 
+/* Tables */
 [data-bs-theme="dark"] .table {
   color: var(--text-secondary);
+  border-color: var(--border-color);
 }
 
 [data-bs-theme="dark"] .table thead th {
   background-color: #1e293b;
   color: var(--text-primary);
-  border-bottom-color: #475569;
+  border-bottom-color: var(--primary-color); /* Neon accent */
+  box-shadow: 0 2px 0 rgba(79, 70, 229, 0.2);
 }
 
-[data-bs-theme="dark"] .table tbody tr {
-    background-color: #1e293b;
-    border-bottom-color: #334155;
-}
-
+/* Optimized Table Hover for Dark Mode */
 [data-bs-theme="dark"] .table tbody tr:hover {
-  background-color: #334155 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important; /* Simple light overlay */
+  box-shadow: inset 3px 0 0 var(--primary-color); /* Neon strip back */
+}
+
+/* Forms & Inputs - Neon Focus */
+.form-control:focus, 
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
 }
 
 [data-bs-theme="dark"] .form-control, 
@@ -87,99 +181,179 @@ body {
   background-color: #1e293b;
   color: #f8fafc;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25), 0 0 15px rgba(79, 70, 229, 0.4); /* Neon Glow */
 }
 
-[data-bs-theme="dark"] .form-control::placeholder {
-    color: #94a3b8;
+/* Buttons - Neon Effect */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
-[data-bs-theme="dark"] .nav-link {
-  color: #94a3b8 !important;
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: 0 0 15px rgba(79, 70, 229, 0.5); /* Glow on hover */
 }
 
+[data-bs-theme="dark"] .btn-primary {
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.3);
+}
+
+[data-bs-theme="dark"] .btn-primary:hover {
+  box-shadow: 0 0 20px rgba(79, 70, 229, 0.6); /* Stronger glow */
+}
+
+/* Cards */
+.card {
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+[data-bs-theme="dark"] .card {
+  background-color: #1e293b;
+  border-color: #334155;
+  box-shadow: var(--shadow-md);
+}
+
+[data-bs-theme="dark"] .card:hover {
+  border-color: var(--primary-color);
+  box-shadow: var(--shadow-lg); /* Glow effect on card hover */
+}
+
+/* Modals */
+[data-bs-theme="dark"] .modal-content {
+  background-color: #1e293b;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+  color: var(--text-primary); /* Ensure text is white */
+}
+
+[data-bs-theme="dark"] .modal-header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+[data-bs-theme="dark"] .modal-footer {
+  border-top: 1px solid var(--border-color);
+}
+
+[data-bs-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Chat UI Styles */
+.chat-container {
+  background-color: var(--background-bg); /* Match theme bg */
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+[data-bs-theme="dark"] .chat-container {
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.chat-bubble {
+  max-width: 80%;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.chat-bubble:hover {
+  transform: translateY(-1px);
+}
+
+.chat-bubble.me {
+  background-color: var(--chat-bubble-me);
+  color: var(--chat-text-me);
+  border-top-right-radius: 0;
+  box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3); /* Colored shadow for me */
+}
+
+.chat-bubble.other {
+  background-color: var(--chat-bubble-other);
+  color: var(--chat-text-other);
+  border-top-left-radius: 0;
+  border: 1px solid var(--border-color);
+}
+
+/* Chat Text Colors */
+.chat-bubble.me p, 
+.chat-bubble.me strong {
+  color: var(--chat-text-me) !important;
+}
+
+.chat-bubble.other p, 
+.chat-bubble.other strong {
+  color: var(--chat-text-other) !important;
+}
+
+.chat-bubble.me .chat-meta {
+  color: var(--chat-meta-me) !important;
+}
+
+.chat-bubble.other .chat-meta {
+  color: var(--chat-meta-other) !important;
+}
+
+.chat-username {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+/* Custom Scrollbar for Chat */
+.chat-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+[data-bs-theme="dark"] .chat-container::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Nav Link Hover Glow */
 [data-bs-theme="dark"] .nav-link:hover, 
 [data-bs-theme="dark"] .nav-link.active {
-    background-color: #334155;
-    color: #60a5fa !important; /* Lighter blue for dark mode */
+  color: #f8fafc !important;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Neon text glow */
 }
 
-[data-bs-theme="dark"] .copyable:hover {
-    background-color: #334155 !important;
+/* Tooltips */
+.tooltip-inner {
+  background-color: var(--primary-color);
+  color: #fff;
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.5);
 }
 
-/* Quill Editor Dark Mode Overrides */
-[data-bs-theme="dark"] .ql-toolbar {
-    background-color: var(--surface-bg);
-    border-color: var(--border-color) !important;
+.bs-tooltip-top .tooltip-arrow::before {
+  border-top-color: var(--primary-color);
 }
 
-[data-bs-theme="dark"] .ql-container {
-    background-color: var(--surface-bg);
-    border-color: var(--border-color) !important;
-    color: var(--text-primary);
+/* Content Areas in Modals */
+.first-mail-content, .report-content {
+  background-color: var(--surface-bg);
+  color: var(--text-primary);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
 }
 
-[data-bs-theme="dark"] .ql-stroke {
-    stroke: #cbd5e1 !important; /* Light gray stroke for icons */
-}
-
-[data-bs-theme="dark"] .ql-fill {
-    fill: #cbd5e1 !important; /* Light gray fill for icons */
-}
-
-[data-bs-theme="dark"] .ql-picker {
-    color: #cbd5e1 !important;
-}
-
-[data-bs-theme="dark"] .ql-editor.ql-blank::before {
-    color: #64748b !important; /* Lighter placeholder color */
-    font-style: italic;
-}
-
-/* Active state for toolbar buttons in dark mode */
-[data-bs-theme="dark"] .ql-active .ql-stroke {
-    stroke: var(--primary-color) !important;
-}
-[data-bs-theme="dark"] .ql-active .ql-fill {
-    fill: var(--primary-color) !important;
-}
-
-/* Ensure editor text is readable in dark mode */
-[data-bs-theme="dark"] .ql-editor {
-    color: var(--text-primary);
-}
-
-/* Light Mode Placeholder Optimization */
-.ql-editor.ql-blank::before {
-    color: #94a3b8; /* Consistent placeholder color */
-    font-style: italic;
-}
-
-/* Emoji Picker Dark Mode Overrides */
-[data-bs-theme="dark"] #emoji-palette {
-    background-color: var(--surface-bg);
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
-}
-
-[data-bs-theme="dark"] #tab-toolbar {
-    background-color: var(--surface-bg);
-    border-bottom: 1px solid var(--border-color);
-}
-
-[data-bs-theme="dark"] .emoji-tab {
-    background-color: var(--surface-bg);
-    color: var(--text-secondary);
-}
-
-[data-bs-theme="dark"] .emoji-tab.active {
-    background-color: #334155;
-    color: var(--primary-color);
-}
-
-[data-bs-theme="dark"] .emoji-item:hover {
-    background-color: #334155;
-    border-radius: 4px;
+[data-bs-theme="dark"] .first-mail-content, 
+[data-bs-theme="dark"] .report-content {
+  background-color: #0f172a; /* Darker than modal */
+  border-color: #334155;
 }
 
 /* Login Page Layout */
@@ -205,19 +379,7 @@ body {
     margin-bottom: 2rem;
 }
 
-/* Dark Mode Button Overrides */
-[data-bs-theme="dark"] .btn-light {
-    background-color: #1e293b;
-    border-color: #334155;
-    color: #e2e8f0;
-}
-[data-bs-theme="dark"] .btn-light:hover {
-    background-color: #334155;
-    color: #fff;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-}
-
-/* Table Enhancements */
+/* Table General Styles */
 .table {
   margin-bottom: 0;
   border-collapse: separate;
@@ -226,7 +388,7 @@ body {
 }
 
 .table thead th {
-  background-color: #f8fafc;
+  background-color: var(--background-bg);
   border-bottom: 1px solid var(--border-color);
   color: var(--text-secondary);
   font-weight: 600;
@@ -240,10 +402,6 @@ body {
   transition: background-color 0.15s ease;
 }
 
-.table tbody tr:hover {
-  background-color: #f8fafc;
-}
-
 .table td {
   vertical-align: middle;
   padding: 1rem;
@@ -252,7 +410,7 @@ body {
   font-size: 0.925rem;
 }
 
-/* Form Controls */
+/* Form Controls General */
 .form-control, .form-select {
   border-color: var(--border-color);
   border-radius: var(--radius-md);
@@ -264,10 +422,7 @@ body {
   color: var(--text-primary);
 }
 
-.form-control:focus, .form-select:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
+/* Restored Old UI Elements */
 
 /* Custom Utilities */
 .column-toggle {
@@ -277,17 +432,18 @@ body {
 }
 
 .col-description {
-  max-width: 300px;
+  max-width: 400px;
 }
 
-/* Tooltip for Description */
+/* Description Hover Popup (Single line initially, full text on hover) */
 .desc-cell {
-  max-width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 250px; /* Restrict width to show ~4-7 words */
+  white-space: nowrap; /* Force single line */
+  overflow: hidden; /* Hide overflow */
+  text-overflow: ellipsis; /* Add ... */
   cursor: help;
   position: relative;
+  transition: none; /* No transition for instant hover effect */
 }
 
 .desc-cell:hover {
@@ -308,35 +464,20 @@ body {
   max-width: 500px;
 }
 
-/* Restored Neon & Hover Effects */
-a {
-  text-decoration: none;
-  color: var(--primary-color);
-  transition: all 0.2s ease;
+/* Dark Mode Description Popup */
+[data-bs-theme="dark"] .desc-cell:hover {
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5), 0 0 20px rgba(79, 70, 229, 0.2); /* Neon glow */
 }
 
-a:hover {
-  color: var(--primary-hover);
-  text-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
-}
-
-/* Dark Mode Links - Neon Glow */
-[data-bs-theme="dark"] a:not(.btn) {
-    color: #f1f5f9;
-}
-
-[data-bs-theme="dark"] a:not(.btn):hover {
-    color: #ffffff;
-    text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #818cf8, 0 0 30px #818cf8;
-}
-
-/* Copyable (Email/Phone) Hover Effects */
+/* Copyable Elements */
 .copyable {
   cursor: pointer;
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   transition: var(--transition-base);
-  display: inline-block; /* Ensure padding works */
+  display: inline-block;
 }
 
 .copyable:hover {
@@ -351,56 +492,3 @@ a:hover {
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
     text-shadow: 0 0 5px #fff;
 }
-
-/* AI Generator Styles */
-[data-bs-theme="dark"] .bg-light {
-    background-color: #1e293b !important; /* Dark surface for result area */
-    color: var(--text-primary);
-}
-
-[data-bs-theme="dark"] #resultArea {
-    background-color: #0f172a !important; /* Darker background for code block */
-    color: #a5b4fc; /* Light indigo for code text */
-    border: 1px solid var(--border-color);
-}
-
-[data-bs-theme="dark"] .card-header {
-    border-bottom-color: var(--border-color);
-}
-
-/* Ensure form inputs in AI tab look good in dark mode */
-[data-bs-theme="dark"] #promptForm .form-control {
-    background-color: #0f172a;
-    border-color: var(--border-color);
-    color: var(--text-primary);
-}
-
-[data-bs-theme="dark"] #promptForm .form-control:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
-}
-
-/* Badge styling */
-[data-bs-theme="dark"] .badge.bg-secondary {
-    background-color: #334155 !important;
-    color: #94a3b8;
-}
-
-/* Code area scrollbar for dark mode */
-[data-bs-theme="dark"] #resultArea::-webkit-scrollbar {
-    width: 8px;
-}
-
-[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-
-[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-thumb {
-    background: #475569;
-    border-radius: 4px;
-}
-
-[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
-
