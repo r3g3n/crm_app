@@ -871,8 +871,10 @@ def create_app():
         
         if content:
             now = datetime.utcnow().isoformat()
-            db.execute("INSERT INTO comments(contact_id,user_id,content,created_at) VALUES(?,?,?,?)",
+            cursor = db.execute("INSERT INTO comments(contact_id,user_id,content,created_at) VALUES(?,?,?,?)",
                        (contact_id,user["id"],content,now))
+            comment_id = cursor.lastrowid
+            
             db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
                        (contact_id,user["id"],"comment","",now))
             db.execute("UPDATE contacts SET updated_at = ? WHERE id = ?", (now, contact_id))
@@ -885,6 +887,7 @@ def create_app():
                 return {
                     "success": True,
                     "comment": {
+                        "id": comment_id,
                         "username": user_data["username"],
                         "avatar_url": user_data["avatar_url"],
                         "content": content,

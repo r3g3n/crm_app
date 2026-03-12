@@ -57,6 +57,7 @@
   <div class="text-muted small mt-2">Используйте комментарии для фиксации этапов переговоров.</div>
   </form>
 
+  <div id="comments-list">
     {% for comment in comments %}
     <div class="card mb-3">
       <div class="card-body">
@@ -84,6 +85,7 @@
     {% else %}
     <p class="text-muted">Нет комментариев.</p>
     {% endfor %}
+  </div>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -118,13 +120,88 @@
 
     var form = document.querySelector('form.card');
     form.onsubmit = function(e) {
-      var html = quill.root.innerHTML;
+      e.preventDefault();
+      
+      // Populate hidden input
+      var htmlContent = quill.root.innerHTML;
       if (quill.getText().trim().length === 0) {
         alert("Комментарий не может быть пустым");
-        e.preventDefault();
         return false;
       }
-      document.querySelector('#comment-input').value = html;
+      document.querySelector('#comment-input').value = htmlContent;
+
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn.innerText;
+      btn.innerText = '...';
+      btn.disabled = true;
+
+      const formData = new FormData(form);
+
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+            const commentsList = document.getElementById('comments-list');
+            const noComments = commentsList.querySelector('p.text-muted');
+            if (noComments && noComments.innerText === 'Нет комментариев.') {
+                noComments.remove();
+            }
+
+            const c = data.comment;
+            
+            // Avatar HTML
+            let avatarHtml = '';
+            if (c.avatar_url) {
+                avatarHtml = `<img src="${c.avatar_url}" alt="Avatar" class="rounded-circle" width="24" height="24" style="object-fit: cover;">`;
+            } else {
+                avatarHtml = `<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 24px; height: 24px; font-size: 12px;">${c.username.charAt(0).toUpperCase()}</div>`;
+            }
+
+            // Delete button (since it's me)
+            // Note: url_for is server-side. We can construct the delete URL if we know the pattern, or return it from server.
+            // For now, I'll omit the delete button on the newly added comment or add a reload hint if needed.
+            // Or better, assume standard route /comments/<id>/delete.
+            // But I don't have the new comment ID in the response!
+            // The JSON response in app.py currently returns: { username, avatar_url, content, created_at, user_id }
+            // It does NOT return comment ID. I should fix app.py to return ID if I want to add delete button.
+            // For now, I will skip the delete button on the dynamic element.
+
+            const html = `
+            <div class="card mb-3">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    ${avatarHtml}
+                    <span class="fw-bold">${c.username}</span>
+                    <small class="text-muted">только что</small>
+                  </div>
+                </div>
+                <div class="card-text ql-editor p-0">${c.content}</div>
+              </div>
+            </div>
+            `;
+            
+            commentsList.insertAdjacentHTML('afterbegin', html);
+            quill.setContents([]);
+        } else {
+            alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+        }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+          alert('Ошибка при отправке комментария');
+      })
+      .finally(() => {
+          btn.innerText = originalText;
+          btn.disabled = false;
+      });
     };
   });
 </script>

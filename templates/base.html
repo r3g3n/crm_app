@@ -108,6 +108,94 @@
       });
     }
 
+    // Unified AJAX Comment Submission
+    window.submitChatComment = function(event, form) {
+      event.preventDefault();
+      
+      const formData = new FormData(form);
+      const url = form.action;
+      const btn = form.querySelector('button[type="submit"]');
+      const originalContent = btn.innerHTML;
+      
+      // Loading state
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      
+      fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Find container: look for .chat-container in modal or previous sibling
+          let container = null;
+          const modal = form.closest('.modal');
+          if (modal) {
+            container = modal.querySelector('.chat-container');
+          } else {
+            // Fallback: previous sibling (for inline forms)
+            container = form.previousElementSibling;
+            while(container && !container.classList.contains('chat-container')) {
+                container = container.previousElementSibling;
+            }
+          }
+
+          if (container) {
+            // Remove "No comments" message
+            const noComments = container.querySelector('.text-muted.text-center, .alert-info');
+            if (noComments) noComments.remove();
+            
+            const c = data.comment;
+            
+            // Avatar HTML
+            let avatarHtml = '';
+            if (c.avatar_url) {
+                avatarHtml = `<img src="${c.avatar_url}" class="rounded-circle shadow-sm" width="32" height="32" style="object-fit: cover;">`;
+            } else {
+                avatarHtml = `<span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white shadow-sm" style="width: 32px; height: 32px; font-size: 14px;">${c.username.charAt(0).toUpperCase()}</span>`;
+            }
+            
+            // Generate HTML (Standardized Chat Bubble)
+            // Using structure compatible with recent_comments.html
+            const html = `
+                <div class="d-flex mb-4 justify-content-end align-items-end">
+                    <div class="chat-bubble me shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="chat-username text-truncate me-2">${c.username}</span>
+                            <small class="chat-meta" style="font-size: 0.7em;">только что</small>
+                        </div>
+                        <div class="chat-text text-break" style="white-space: pre-wrap;">${c.content}</div>
+                    </div>
+                    <div class="ms-2 flex-shrink-0">
+                        ${avatarHtml}
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            container.scrollTop = container.scrollHeight;
+          }
+          
+          form.reset();
+        } else {
+          alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Ошибка при отправке комментария');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+      });
+    };
+
     // Global copy handler
     document.addEventListener("click", (e) => {
       const el = e.target.closest(".copyable");

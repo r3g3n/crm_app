@@ -1,45 +1,83 @@
 {% extends "base.html" %}
 {% block content %}
-<h1 class="h3 mb-4">Последние комментарии</h1>
-<div class="row">
-  <div class="col-12">
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"></h1>
+    <span class="text-muted">Всего: {{ comments|length }}</span>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-10 col-xl-9">
     {% for c in comments %}
-    <div class="card mb-3 shadow-sm border-0" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#chatModal{{ c.contact_id }}">
-      <div class="card-header bg-body-tertiary d-flex justify-content-between align-items-center py-2">
-        {% set display_site = c.site|clean_url if c.site else (c.email or 'Без контакта') %}
-        <span class="fw-bold text-primary text-truncate flex-grow-1" data-bs-toggle="tooltip" title="Ответить в чате по {{ display_site }}">
-          {{ display_site }}
-        </span>
-        <small class="text-muted text-nowrap ms-2">{{ c.created_at|datetime }}</small>
+    <div class="d-flex align-items-start mb-4 position-relative hover-bg p-2 rounded transition-bg" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#chatModal{{ c.contact_id }}">
+      
+      <!-- Avatar -->
+      <div class="flex-shrink-0 me-3">
+        {% if c.avatar_url %}
+        <img src="{{ c.avatar_url }}" alt="{{ c.username }}" class="rounded-circle shadow-sm" width="48" height="48" style="object-fit: cover;">
+        {% else %}
+        <span class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white shadow-sm fw-bold" style="width: 48px; height: 48px; font-size: 20px;">{{ c.username[0]|upper }}</span>
+        {% endif %}
       </div>
-      <div class="card-body">
-        <div class="card-text fs-6 text-body">
-            {{ (c.content or '')|striptags|replace('&nbsp;', ' ')|truncate_words(7) }}
+
+      <!-- Content -->
+      <div class="flex-grow-1 min-w-0">
+        
+        <!-- Header: User, Context, Time -->
+        <div class="d-flex flex-wrap justify-content-between align-items-baseline mb-1">
+            <div class="text-truncate me-2">
+                <span class="fw-bold text-body me-1">{{ c.username }}</span>
+                <span class="text-muted small">
+                    <i class="bi bi-caret-right-fill text-secondary mx-1" style="font-size: 0.7em;"></i>
+                    {% set display_site = c.site|clean_url if c.site else (c.email or 'Без контакта') %}
+                    <span class="fw-medium text-primary">{{ display_site }}</span>
+                </span>
+                <span class="badge bg-{{ status_color(c.status) }} ms-2" style="font-size: 0.7em;">{{ c.status }}</span>
+            </div>
+            <small class="text-muted flex-shrink-0" style="font-size: 0.8em;">{{ c.created_at|datetime }}</small>
         </div>
+
+        <!-- Bubble -->
+        <div class="bg-body-tertiary rounded-3 p-3 shadow-sm position-relative chat-bubble-feed">
+            <div class="chat-text text-break" style="white-space: pre-wrap; font-size: 0.95rem;">{{ c.content|safe_html }}</div>
+        </div>
+
+        <!-- Footer Actions (Optional, appearing on hover or fixed) -->
+        <!-- Currently hidden to keep it clean like a feed, actions are inside modal -->
       </div>
-      <div class="card-footer bg-transparent border-top-0 pt-0 pb-2 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-            <small class="text-muted me-2">Автор:</small>
-            {% if c.avatar_url %}
-            <img src="{{ c.avatar_url }}" alt="{{ c.username }}" class="rounded-circle me-1" width="24" height="24" style="object-fit: cover;">
-            {% else %}
-            <span class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center me-1 text-white" style="width: 24px; height: 24px; font-size: 12px;">{{ c.username[0]|upper }}</span>
-            {% endif %}
-            <span class="fw-medium me-2">{{ c.username }}</span>
-            <span class="badge bg-{{ status_color(c.status) }}">{{ c.status }}</span>
-        </div>
-        <form method="post" action="{{ url_for('delete_comment', comment_id=c.id) }}" onsubmit="event.stopPropagation(); return confirm('Удалить комментарий?');">
-            <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" title="Удалить">
-                <i class="bi bi-trash"></i>
+      
+      <!-- Quick Delete (Only if needed, positioned absolute top-right or similar) -->
+       <form method="post" action="{{ url_for('delete_comment', comment_id=c.id) }}" onsubmit="event.stopPropagation(); return confirm('Удалить комментарий?');" class="position-absolute top-0 end-0 mt-2 me-2 opacity-0 hover-opacity">
+            <button type="submit" class="btn btn-sm btn-link text-danger p-0" title="Удалить">
+                <i class="bi bi-x-circle-fill fs-5"></i>
             </button>
         </form>
-      </div>
+
     </div>
     {% else %}
-    <div class="alert alert-info">Нет комментариев</div>
+    <div class="alert alert-info text-center py-5">
+        <i class="bi bi-chat-square-dots display-4 mb-3 d-block text-secondary"></i>
+        Нет комментариев
+    </div>
     {% endfor %}
+  </div>
+</div>
 
-    <!-- Modals for Chat History -->
+<style>
+    .hover-bg:hover {
+        background-color: rgba(var(--bs-body-color-rgb), 0.03);
+    }
+    .hover-opacity {
+        transition: opacity 0.2s;
+    }
+    .hover-bg:hover .hover-opacity {
+        opacity: 1 !important;
+    }
+    .chat-bubble-feed {
+        border-top-left-radius: 2px !important;
+    }
+</style>
+
+<!-- Modals for Chat History -->
     {% for cid, contact in contact_map.items() %}
     <div class="modal fade" id="chatModal{{ cid }}" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -98,7 +136,7 @@
             </div>
           </div>
           <div class="modal-footer bg-body-tertiary border-top-0 d-block p-2">
-            <form method="post" action="{{ url_for('add_comment', contact_id=cid) }}" class="d-flex align-items-center gap-2 w-100">
+            <form method="post" action="{{ url_for('add_comment', contact_id=cid) }}" onsubmit="submitChatComment(event, this)" class="d-flex align-items-center gap-2 w-100">
                 <input type="hidden" name="redirect_to" value="{{ url_for('recent_comments') }}">
                 <a href="{{ url_for('contact_view', contact_id=cid) }}" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Перейти к контакту">
                     <i class="bi bi-box-arrow-up-right"></i>
