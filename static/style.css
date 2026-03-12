@@ -283,11 +283,15 @@ a:hover {
 
 /* Chat Text Colors */
 .chat-bubble.me p, 
+.chat-bubble.me div,
+.chat-bubble.me .chat-text,
 .chat-bubble.me strong {
   color: var(--chat-text-me) !important;
 }
 
 .chat-bubble.other p, 
+.chat-bubble.other div,
+.chat-bubble.other .chat-text,
 .chat-bubble.other strong {
   color: var(--chat-text-other) !important;
 }

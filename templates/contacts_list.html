@@ -235,7 +235,7 @@
                                   <strong class="chat-username">{{ comment.username }}</strong>
                                   <small class="chat-meta">{{ comment.created_at.replace('T', ' ')[:16] }}</small>
                                 </div>
-                                <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|urlize(target='_blank') }}</p>
+                                <div class="chat-text text-break mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|safe_html }}</div>
                             </div>
                             <img src="{{ comment.avatar_url or 'https://www.gravatar.com/avatar/?d=mp' }}" class="rounded-circle ms-2" width="32" height="32" style="object-fit: cover;">
                         </div>
@@ -247,7 +247,7 @@
                                   <strong class="chat-username">{{ comment.username }}</strong>
                                   <small class="chat-meta">{{ comment.created_at.replace('T', ' ')[:16] }}</small>
                                 </div>
-                                <p class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|urlize(target='_blank') }}</p>
+                                <div class="chat-text text-break mb-0" style="white-space: pre-wrap; font-size: 0.9rem;">{{ comment.content|safe_html }}</div>
                             </div>
                         </div>
                         {% endif %}

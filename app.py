@@ -74,6 +74,13 @@ def create_app():
             g.db.row_factory = sqlite3.Row
         return g.db
 
+    @app.template_filter('safe_html')
+    def safe_html_filter(content):
+        if not content:
+            return ""
+        cleaned = bleach.clean(content, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True)
+        return Markup(cleaned)
+
     @app.teardown_appcontext
     def close_db(exception=None):
         db = g.pop("db", None)
@@ -890,7 +897,7 @@ def create_app():
                         "id": comment_id,
                         "username": user_data["username"],
                         "avatar_url": user_data["avatar_url"],
-                        "content": content,
+                        "content": bleach.clean(content, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True),
                         "created_at": now,
                         "user_id": user["id"]
                     }
