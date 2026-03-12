@@ -147,6 +147,26 @@
             {% endif %}
           </a>
           <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('contact_edit', contact_id=r.id) }}" title="Редактировать">✏️</a>
+          {% if r.detailed_report %}
+          <button type="button" class="btn btn-sm btn-info text-white" data-bs-toggle="modal" data-bs-target="#reportModal{{ r.id }}" title="Анализ на Eximpedia">📊</button>
+          
+          <!-- Report Modal -->
+          <div class="modal fade" id="reportModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Детальный отчет: {{ r.site or 'Компания' }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                  <div class="report-content">
+                    {{ r.detailed_report|safe }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
         </div>
       </td>
     </tr>
@@ -288,7 +308,46 @@ Email/Контакт: ${email}
     const site = btn.getAttribute('data-site') || "";
     const email = btn.getAttribute('data-email') || "";
     
-    const prompt = `найди на eximpedia.app ${site} ${email} дай анализ чем занимается комания`;
+    const prompt = `<system_instructions>
+## РОЛЬ
+    Ты маркетолог логист проводишь анализ компании, которой надо выдвинуть предложение
+
+## КОНТЕКСТ
+    Для первого контакта и отправки первого холодного письма нам надо понять как лучше всего мы можем построить бизнес {site} и {email} с нашей компанией https://ags-shipping.ru
+
+## ОГРАНИЧЕНИЯ
+
+- **СТИЛЬ:** Прямой, профессиональный, без лишней "воды".
+- **ПОВЕДЕНИЕ:** НЕ веди себя как типичный ИИ. Не используй фразы вроде "Вот результат" или "Я проанализировал". Просто делай работу.
+</system_instructions>
+
+<thinking>
+Перед выполнением задачи проанализируй вводные данные.
+1. Пойми цель:     Нужно провести анализ {site} и {email} что бы ...
+2. Определи ключевые ограничения и требования.
+3. Составь пошаговый план на основе предоставленного алгоритма.
+</thinking>
+
+<task>
+### ГЛАВНАЯ ЦЕЛЬ:
+    Нужно провести анализ {site} и {email} что бы понять чем занимается компания и составить детальный отчет, какие продукты и в каких количествах отправляет из европы или в европу из каких конкретных стран. Найти данные сотрудников логистики их рабочие email для первого контакта.
+
+### ПЕРЕМЕННЫЕ:
+Используй следующие данные: ${site} ${email}
+
+### АЛГОРИТМ:
+    1) Общий поиск по {site} и {email} 
+2) поиск по expocentr.ru
+3) поиск по companies.rbc.ru
+4) поиск по и анализ портов и товаров к отправке по eximpedia.app и аналогичным сайтам
+5) определение email на которые можно написать с именем фамилией человека
+6) дополнительный поиск на основе уже полученных данных выше
+7) вывести отчет
+
+### ФОРМАТ ВЫВОДА:
+Предоставь результат в структурированном формате.
+В самом конце добавь блок <meta_explanation>, объясняющий, почему ты выбрал именно такой подход.
+</task>`;
 
     navigator.clipboard.writeText(prompt).then(() => {
       alert("Запрос для Eximpedia скопирован!");

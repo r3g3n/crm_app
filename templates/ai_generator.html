@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <span class="text-primary">🏗️</span> Генератор инженерных промтов
+        </h1>
+        <span class="badge bg-secondary">Gemini 3 Pro Architecture</span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Левая колонка: Форма ввода -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-transparent fw-bold text-uppercase small text-muted">
+                    📋 Вводные данные
+                </div>
+                <div class="card-body">
+                    <form id="promptForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Роль (Кто ИИ?)</label>
+                            <input type="text" class="form-control" id="role" placeholder="Например: Senior Frontend Developer или Логист-международник">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Контекст (Бэкграунд)</label>
+                            <textarea class="form-control" id="context" rows="3" placeholder="Опиши компанию, проект или текущую ситуацию..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Задача (Что сделать?)</label>
+                            <textarea class="form-control" id="task" rows="3" placeholder="Конкретный результат, который нужно получить..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Алгоритм (По шагам)</label>
+                            <textarea class="form-control" id="steps" rows="3" placeholder="1. Проанализируй... 2. Сравни... 3. Напиши..."></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Ограничения и запреты</label>
+                            <textarea class="form-control" id="constraints" rows="2" placeholder="Чего НЕ делать? (Например: не использовать пассивный залог)"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Переменные</label>
+                            <input type="text" class="form-control" id="variables" placeholder="url, client_name, price (через запятую)">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary w-100" onclick="generatePrompt()">
+                                <i class="bi bi-magic me-2"></i>Сгенерировать
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                Сброс
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Результат -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100 bg-light">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <span class="fw-bold text-uppercase small text-muted">⚡ Готовый код (XML + Markdown)</span>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard()">
+                        <i class="bi bi-clipboard me-1"></i> Копировать
+                    </button>
+                </div>
+                <div class="card-body p-0 position-relative">
+                    <textarea class="form-control border-0 bg-light font-monospace p-3 h-100" id="resultArea" style="min-height: 500px; resize: none;" readonly></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ROLES_LIB = {
+        "logist": {
+            role: "Опытный логист компании AGS Europe",
+            context: "Мы — контейнерная линия. Морское плечо Роттердам - СПб (свои суда). Офисы: Роттердам, СПб, Барселона, Антверпен.",
+            constraints: "Только Европа (Испания, Польша, Германия и др.) в РФ. Не предлагать другие регионы.",
+            task: "Напиши письмо клиенту с предложением услуг.",
+            steps: "1. Изучи сайт клиента.\n2. Выдели ключевые боли.\n3. Предложи решение через наш сервис.",
+            variables: "desc, site, city"
+        },
+        "sales": {
+            role: "Senior Sales Manager",
+            context: "Холодные и теплые продажи сложных услуг/товаров.",
+            constraints: "Избегай агрессивных продаж, пиши в стиле консультативного подхода.",
+            task: "Составь скрипт первого звонка.",
+            steps: "1. Приветствие.\n2. Квалификация лида.\n3. Назначение встречи.",
+            variables: "client_name, product_link"
+        },
+        "dev": {
+            role: "Senior Full Stack Developer",
+            context: "Разработка CRM системы на Flask + SQLite.",
+            constraints: "Используй только современные подходы. Код должен быть чистым и документированным.",
+            task: "Реализуй новый функционал по ТЗ.",
+            steps: "1. Продумай архитектуру.\n2. Напиши код.\n3. Напиши тесты.",
+            variables: "feature_name, requirements"
+        }
+    };
+
+    function generatePrompt() {
+        const role = document.getElementById('role').value || "AI ассистент";
+        const context = document.getElementById('context').value || "";
+        const task = document.getElementById('task').value || "";
+        const steps = document.getElementById('steps').value || "";
+        const constraints = document.getElementById('constraints').value || "";
+        const variables = document.getElementById('variables').value || "";
+
+        let formattedVars = "";
+        if (variables) {
+            formattedVars = variables.split(',').map(v => `\${${v.trim()}}`).join(' ');
+        }
+
+        const prompt = `<system_instructions>
+## РОЛЬ
+${role}
+
+## КОНТЕКСТ
+${context}
+
+## ОГРАНИЧЕНИЯ
+${constraints}
+- **СТИЛЬ:** Прямой, профессиональный, без лишней "воды".
+- **ПОВЕДЕНИЕ:** НЕ веди себя как типичный ИИ. Не используй фразы вроде "Вот результат" или "Я проанализировал". Просто делай работу.
+</system_instructions>
+
+<thinking>
+Перед выполнением задачи проанализируй вводные данные.
+1. Пойми цель: ${task.substring(0, 50)}...
+2. Определи ключевые ограничения и требования.
+3. Составь пошаговый план на основе предоставленного алгоритма.
+</thinking>
+
+<task>
+### ГЛАВНАЯ ЦЕЛЬ:
+${task}
+
+### ПЕРЕМЕННЫЕ:
+Используй следующие данные: ${formattedVars}
+
+### АЛГОРИТМ:
+${steps}
+
+### ФОРМАТ ВЫВОДА:
+Предоставь результат в структурированном формате.
+В самом конце добавь блок <meta_explanation>, объясняющий, почему ты выбрал именно такой подход.
+</task>`;
+
+        document.getElementById('resultArea').value = prompt;
+    }
+
+    function copyToClipboard() {
+        const copyText = document.getElementById("resultArea");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            alert("Промт скопирован в буфер обмена!");
+        });
+    }
+
+    function clearForm() {
+        document.getElementById('promptForm').reset();
+        document.getElementById('resultArea').value = "";
+    }
+</script>
+{% endblock %}

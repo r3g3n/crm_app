@@ -352,3 +352,55 @@ a:hover {
     text-shadow: 0 0 5px #fff;
 }
 
+/* AI Generator Styles */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #1e293b !important; /* Dark surface for result area */
+    color: var(--text-primary);
+}
+
+[data-bs-theme="dark"] #resultArea {
+    background-color: #0f172a !important; /* Darker background for code block */
+    color: #a5b4fc; /* Light indigo for code text */
+    border: 1px solid var(--border-color);
+}
+
+[data-bs-theme="dark"] .card-header {
+    border-bottom-color: var(--border-color);
+}
+
+/* Ensure form inputs in AI tab look good in dark mode */
+[data-bs-theme="dark"] #promptForm .form-control {
+    background-color: #0f172a;
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-bs-theme="dark"] #promptForm .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.25);
+}
+
+/* Badge styling */
+[data-bs-theme="dark"] .badge.bg-secondary {
+    background-color: #334155 !important;
+    color: #94a3b8;
+}
+
+/* Code area scrollbar for dark mode */
+[data-bs-theme="dark"] #resultArea::-webkit-scrollbar {
+    width: 8px;
+}
+
+[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+[data-bs-theme="dark"] #resultArea::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+

@@ -88,10 +88,16 @@ def create_app():
                 created_by INTEGER,
                 updated_by INTEGER,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                detailed_report TEXT
             );
             """
         )
+        # Ensure detailed_report column exists (migration for existing dbs)
+        try:
+            db.execute("ALTER TABLE contacts ADD COLUMN detailed_report TEXT")
+        except sqlite3.OperationalError:
+            pass # Column already exists
         db.execute(
             """
             CREATE TABLE IF NOT EXISTS comments (
@@ -197,6 +203,14 @@ def create_app():
         db = get_db()
         users = db.execute("SELECT * FROM users ORDER BY id ASC").fetchall()
         return render_template("users_list.html", users=users)
+
+    @app.route("/ai")
+    @login_required
+    def ai_generator():
+        if session.get("role") != "admin":
+            flash("Доступ запрещен", "error")
+            return redirect(url_for("contacts"))
+        return render_template("ai_generator.html")
 
     @app.route("/users/new", methods=["GET", "POST"])
     @login_required
@@ -705,6 +719,7 @@ def create_app():
                 "email2": request.form.get("email2","").strip(),
                 "email3": request.form.get("email3","").strip(),
                 "description": request.form.get("description","").strip(),
+                "detailed_report": request.form.get("detailed_report","").strip(),
                 "category": request.form.get("category","").strip(),
                 "status": request.form.get("status","").strip(),
             }
@@ -712,10 +727,10 @@ def create_app():
             user = current_user()
             db.execute(
                 """
-                UPDATE contacts SET city=?,country=?,phone=?,phone2=?,site=?,email=?,email2=?,email3=?,description=?,category=?,status=?,updated_by=?,updated_at=?
+                UPDATE contacts SET city=?,country=?,phone=?,phone2=?,site=?,email=?,email2=?,email3=?,description=?,detailed_report=?,category=?,status=?,updated_by=?,updated_at=?
                 WHERE id=?
                 """,
-                (data["city"],data["country"],data["phone"],data["phone2"],data["site"],data["email"],data["email2"],data["email3"],data["description"],data["category"],data["status"],user["id"],now,contact_id)
+                (data["city"],data["country"],data["phone"],data["phone2"],data["site"],data["email"],data["email2"],data["email3"],data["description"],data["detailed_report"],data["category"],data["status"],user["id"],now,contact_id)
             )
             db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
                        (contact_id,user["id"],"update","",now))
