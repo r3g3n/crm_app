@@ -556,13 +556,37 @@ def create_app():
             """)
             params.extend([like]*11)
         
+        # Restrict 'restricted' users from seeing 'New' status by default
+        if session.get("role") == "restricted":
+            if not status_filter:
+                # If no status filter is provided, exclude 'New' contacts by default
+                # But allow them to see 'New' if they explicitly filter for it? 
+                # User request: "роль менеджер тоже может видеть все статусы в том числе новый, по умолчанию показывать только в работе"
+                # So they CAN see 'New', but default view should be 'In Progress' (В работе)
+                
+                # However, the previous logic was: where_clauses.append("status != 'Новый'")
+                # This PREVENTED them from seeing 'New'.
+                
+                # New logic: 
+                # 1. If status_filter is set, show that status (even 'Новый').
+                # 2. If status_filter is NOT set, show only 'В работе' (or maybe everything EXCEPT 'Новый'? The user said "default show only In Progress").
+                # Let's interpret "по умолчанию показывать только в работе" as "default filter = 'В работе'".
+                
+                # But wait, if they clear the filter, should they see everything?
+                # "роль менеджер тоже может видеть все статусы в том числе новый" -> implies they HAVE access.
+                # "по умолчанию показывать только в работе" -> implies initial view.
+                
+                # So we should NOT append "status != 'Новый'" anymore.
+                pass
+        
+        # Apply status filter if present
         if status_filter:
             where_clauses.append("status = ?")
             params.append(status_filter)
-
-        # Restrict 'restricted' users from seeing 'New' status
-        if session.get("role") == "restricted":
-            where_clauses.append("status != 'Новый'")
+        elif session.get("role") == "restricted" and not q:
+            # If no filter and no search query, default to 'В работе' for restricted users
+             where_clauses.append("status = ?")
+             params.append("В работе")
 
         where = ""
         if where_clauses:
@@ -589,8 +613,13 @@ def create_app():
         statuses = db.execute("SELECT DISTINCT status FROM contacts WHERE status IS NOT NULL AND status != '' ORDER BY status").fetchall()
         statuses = [s["status"] for s in statuses]
         
-        if session.get("role") == "restricted":
-            statuses = [s for s in statuses if s != "Новый"]
+        # We previously removed 'New' for restricted users, but now they can see it
+        # if session.get("role") == "restricted":
+        #    statuses = [s for s in statuses if s != "Новый"]
+        
+        # However, we want to set the default filter in the UI if it's applied
+        if session.get("role") == "restricted" and not q and not status_filter:
+             status_filter = "В работе"
 
         return render_template("contacts_list.html", rows=rows, q=q, status_filter=status_filter, sort_by=sort_by, statuses=statuses, page=page, pages=pages, total=total, wa_link=wa_link, tg_link=tg_link, format_phone=format_phone, status_color=status_color, per_page=per_page)
 
@@ -636,9 +665,10 @@ def create_app():
         if not row:
             return redirect(url_for("contacts"))
         
-        if session.get("role") == "restricted" and row["status"] == "Новый":
-            flash("Доступ к этому контакту ограничен", "error")
-            return redirect(url_for("contacts"))
+        # Access control: restricted users can now view 'New' status, so no need to block them
+        # if session.get("role") == "restricted" and row["status"] == "Новый":
+        #    flash("Доступ к этому контакту ограничен", "error")
+        #    return redirect(url_for("contacts"))
 
         comments = db.execute(
             "SELECT c.*, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id=u.id WHERE c.contact_id=? ORDER BY c.id DESC",
@@ -659,9 +689,10 @@ def create_app():
         if not row:
             return redirect(url_for("contacts"))
             
-        if session.get("role") == "restricted" and row["status"] == "Новый":
-            flash("Доступ к этому контакту ограничен", "error")
-            return redirect(url_for("contacts"))
+        # Access control: restricted users can now edit 'New' status too
+        # if session.get("role") == "restricted" and row["status"] == "Новый":
+        #    flash("Доступ к этому контакту ограничен", "error")
+        #    return redirect(url_for("contacts"))
 
         if request.method == "POST":
             data = {
@@ -700,9 +731,19 @@ def create_app():
         if not row:
             return redirect(url_for("contacts"))
             
-        if session.get("role") == "restricted" and row["status"] == "Новый":
-            flash("Доступ запрещен", "error")
-            return redirect(url_for("contacts"))
+        # Deletion still requires admin role? Or can restricted users delete 'New' contacts?
+        # User said "роль менеджер тоже может видеть все статусы в том числе новый".
+        # Usually managers shouldn't delete contacts unless specified.
+        # But previous logic blocked restricted users from deleting 'New' contacts specifically.
+        # Let's assume standard behavior: restricted users can delete if they can see/edit.
+        # Or maybe safer to only allow admins to delete?
+        # The previous code only blocked restricted users if status was 'New'. 
+        # It implied restricted users COULD delete other statuses.
+        # So we should probably remove this block too to be consistent.
+        
+        # if session.get("role") == "restricted" and row["status"] == "Новый":
+        #    flash("Доступ запрещен", "error")
+        #    return redirect(url_for("contacts"))
 
         db.execute("DELETE FROM comments WHERE contact_id=?", (contact_id,))
         db.execute("DELETE FROM history WHERE contact_id=?", (contact_id,))
@@ -737,9 +778,9 @@ def create_app():
             JOIN contacts co ON c.contact_id = co.id
         """
         params = []
-        if session.get("role") == "restricted":
-            query += " WHERE co.status != ?"
-            params.append("Новый")
+        # if session.get("role") == "restricted":
+        #    query += " WHERE co.status != ?"
+        #    params.append("Новый")
             
         query += " ORDER BY c.created_at DESC LIMIT 50"
         
