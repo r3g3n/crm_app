@@ -79,7 +79,7 @@
           </form>
           {% endif %}
         </div>
-        <div class="card-text ql-editor p-0">{{ comment.content|safe_html }}</div>
+        <div class="card-text ql-editor p-0" style="white-space: pre-wrap;">{{ comment.content|safe_html }}</div>
       </div>
     </div>
     {% else %}

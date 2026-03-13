@@ -13,13 +13,23 @@ import bleach
 # Configure bleach allowed tags and attributes for Quill.js
 ALLOWED_TAGS = [
     'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 
-    'a', 'span', 'blockquote', 'pre', 'img', 's', 'sub', 'sup'
+    'a', 'span', 'blockquote', 'pre', 'img', 's', 'sub', 'sup', 'code', 'div'
 ]
 ALLOWED_ATTRIBUTES = {
     'a': ['href', 'target', 'title'],
     'img': ['src', 'alt', 'width', 'height'],
-    'span': ['class'],
-    'p': ['class']
+    'span': ['class', 'style'],
+    'p': ['class', 'style'],
+    'strong': ['style'],
+    'em': ['style'],
+    'u': ['style'],
+    's': ['style'],
+    'code': ['style'],
+    'div': ['style', 'class'],
+    'li': ['style'],
+    'ul': ['style'],
+    'ol': ['style'],
+    'br': []
 }
 
 def clean_html_content(content):
@@ -499,6 +509,8 @@ def create_app():
         s = (status or "").lower().strip()
         if "новый" in s: return "info"
         if "работ" in s: return "primary"
+        if "актив" in s: return "warning"
+        if "первый" in s: return "secondary"
         if "переговор" in s: return "warning"
         if "отказ" in s: return "danger"
         if "сделка" in s: return "success"

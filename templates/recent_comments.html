@@ -115,7 +115,7 @@
                                 <span class="chat-username text-truncate me-2">{{ comment.username }}</span>
                                 <small class="chat-meta" style="font-size: 0.7em;">{{ comment.created_at|datetime }}</small>
                             </div>
-                            <div class="chat-text text-break">
+                            <div class="chat-text text-break" style="white-space: pre-wrap; font-size: 0.9rem;">
                                 {{ comment.content|safe_html }}
                             </div>
                         </div>

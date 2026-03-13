@@ -43,7 +43,7 @@
       <label class="form-label">Статус</label>
       <select name="status" class="form-select">
         {% set st = contact.status if contact else 'Новый' %}
-        {% for s in ['Новый','В работе','Переговоры','Отказ','Сделка'] %}
+        {% for s in ['Новый','В работе','Первый контакт','Переговоры','Активные переговоры','Отказ','Сделка'] %}
         <option value="{{ s }}" {% if st == s %}selected{% endif %}>{{ s }}</option>
         {% endfor %}
       </select>
