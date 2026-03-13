@@ -136,7 +136,16 @@
       </td>
       <td class="col-category">{{ r.category }}</td>
       <td class="col-status">
-        <span class="badge bg-{{ status_color(r.status) }}">{{ r.status }}</span>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-{{ status_color(r.status) }} dropdown-toggle status-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="status-btn-{{ r.id }}">
+            {{ r.status }}
+          </button>
+          <ul class="dropdown-menu">
+            {% for s in STATUS_OPTIONS %}
+            <li><a class="dropdown-item" href="#" onclick="updateStatus({{ r.id }}, '{{ s }}'); return false;">{{ s }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
       </td>
       <td class="col-description position-relative">
         <div class="desc-cell">{{ r.description|striptags }}</div>
@@ -278,6 +287,49 @@
   </tbody>
 </table>
 <script>
+  function updateStatus(contactId, newStatus) {
+    const btn = document.getElementById(`status-btn-${contactId}`);
+    const originalText = btn.innerText;
+    const originalClass = btn.className;
+    
+    // Optimistic UI update or loading state could go here
+    btn.style.opacity = '0.5';
+    
+    fetch(`/contacts/${contactId}/update_status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Update button text and color
+        btn.innerText = data.status;
+        
+        // Remove old btn- class and add new one
+        // We need to know possible classes or just reset
+        btn.className = `btn btn-sm btn-${data.color} dropdown-toggle status-btn`;
+        
+        // Optional: Toast notification?
+      } else {
+        alert('Ошибка при обновлении статуса: ' + (data.error || 'Unknown error'));
+        btn.innerText = originalText;
+        btn.className = originalClass;
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Ошибка сети при обновлении статуса');
+      btn.innerText = originalText;
+      btn.className = originalClass;
+    })
+    .finally(() => {
+      btn.style.opacity = '1';
+    });
+  }
+
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
       alert("Текст скопирован в буфер обмена!");

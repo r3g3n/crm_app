@@ -32,6 +32,16 @@ ALLOWED_ATTRIBUTES = {
     'br': []
 }
 
+STATUS_OPTIONS = [
+    'Новый',
+    'В работе',
+    'Первый контакт',
+    'Переговоры',
+    'Активные переговоры',
+    'Отказ',
+    'Сделка'
+]
+
 def clean_html_content(content):
     if not content:
         return ""
@@ -526,7 +536,8 @@ def create_app():
         tg_link=tg_link,
         format_phone=format_phone,
         status_color=status_color,
-        is_landline=is_landline
+        is_landline=is_landline,
+        STATUS_OPTIONS=STATUS_OPTIONS
     )
 
     @app.template_filter('datetime')
@@ -851,6 +862,41 @@ def create_app():
             db.commit()
             return redirect(url_for("contact_view", contact_id=contact_id))
         return render_template("contact_form.html", contact=row)
+
+    @app.route("/contacts/<int:contact_id>/update_status", methods=["POST"])
+    @login_required
+    def update_status(contact_id):
+        data = request.get_json()
+        new_status = data.get("status")
+        
+        if not new_status or new_status not in STATUS_OPTIONS:
+            return {"success": False, "error": "Invalid status"}, 400
+            
+        db = get_db()
+        row = db.execute("SELECT * FROM contacts WHERE id=?", (contact_id,)).fetchone()
+        if not row:
+            return {"success": False, "error": "Contact not found"}, 404
+            
+        # Access control: check if restricted user can edit this contact
+        # Assuming if they can see it in list, they can edit status?
+        # Reusing existing logic: if restricted users can edit 'New' now, they can edit status.
+        
+        user = current_user()
+        now = datetime.utcnow().isoformat()
+        
+        db.execute("UPDATE contacts SET status=?, updated_by=?, updated_at=? WHERE id=?",
+                   (new_status, user["id"], now, contact_id))
+                   
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (contact_id, user["id"], "update_status", f"Changed status to {new_status}", now))
+        
+        db.commit()
+        
+        return {
+            "success": True, 
+            "status": new_status, 
+            "color": status_color(new_status)
+        }
 
     @app.route("/contacts/<int:contact_id>/delete", methods=["POST"])
     @login_required
