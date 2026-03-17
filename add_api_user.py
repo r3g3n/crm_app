@@ -1,0 +1,50 @@
+import sqlite3
+import os
+from datetime import datetime
+from werkzeug.security import generate_password_hash
+
+DB_PATH = os.path.join(os.path.dirname(__file__), 'crm.db')
+
+def hash_password(password):
+    return generate_password_hash(password, method='pbkdf2:sha256')
+
+def add_api_user():
+    username = 'api'
+    password = 'api_s3ctr3t-APPpro2019'
+    role = 'api'
+    
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        db = conn.cursor()
+        
+        # Проверяем, существует ли пользователь api
+        user = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
+        
+        now = datetime.utcnow().isoformat()
+        
+        if user:
+            # Обновляем пароль, если пользователь существует
+            print(f"Пользователь '{username}' уже существует. Обновляем пароль...")
+            db.execute(
+                "UPDATE users SET password_hash = ? WHERE username = ?",
+                (hash_password(password), username)
+            )
+        else:
+            # Создаем нового пользователя
+            print(f"Создаем пользователя '{username}'...")
+            db.execute(
+                "INSERT INTO users (username, password_hash, role, created_at) VALUES (?, ?, ?, ?)",
+                (username, hash_password(password), role, now)
+            )
+            
+        conn.commit()
+        print("Готово! Пользователь 'api' настроен для работы.")
+        
+    except Exception as e:
+        print(f"Произошла ошибка: {e}")
+    finally:
+        conn.close()
+
+if __name__ == '__main__':
+    add_api_user()
