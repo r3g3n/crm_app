@@ -197,19 +197,34 @@ def create_app():
         db.execute("UPDATE users SET role = 'admin' WHERE username = 'admin'")
         db.commit()
 
+        # Ensure api user exists
+        api_user = db.execute("SELECT id FROM users WHERE username = 'api'").fetchone()
+        if not api_user:
+            now = datetime.utcnow().isoformat()
+            db.execute(
+                "INSERT INTO users(username, password_hash, role, created_at) VALUES(?,?,?,?)",
+                ("api", hash_password("api123"), "api", now),
+            )
+            db.commit()
+
         cur = db.execute("SELECT COUNT(*) as c FROM users")
         if cur.fetchone()["c"] == 0:
             seed_users = [
                 ("admin", hash_password("admin123"), "admin"),
                 ("user1", hash_password("user123"), "user"),
                 ("user2", hash_password("user123"), "user"),
+                ("api", hash_password("api123"), "api"),
             ]
             now = datetime.utcnow().isoformat()
             for u, ph, r in seed_users:
-                db.execute(
-                    "INSERT INTO users(username, password_hash, role, created_at) VALUES(?,?,?,?)",
-                    (u, ph, r, now),
-                )
+                # Avoid constraint failure if user already inserted
+                try:
+                    db.execute(
+                        "INSERT INTO users(username, password_hash, role, created_at) VALUES(?,?,?,?)",
+                        (u, ph, r, now),
+                    )
+                except sqlite3.IntegrityError:
+                    pass
             db.commit()
 
     def hash_password(pw: str) -> str:
@@ -1413,6 +1428,26 @@ def create_app():
                 "created_at": now
             }
         }), 201
+
+    @app.route("/api/v1/comments/<int:comment_id>", methods=["DELETE"])
+    @api_required
+    def api_delete_comment_endpoint(comment_id):
+        db = get_db()
+        comment = db.execute("SELECT * FROM comments WHERE id = ?", (comment_id,)).fetchone()
+        
+        if not comment:
+            return jsonify({"success": False, "error": "Comment not found"}), 404
+            
+        contact_id = comment["contact_id"]
+        user_id = g.api_user["id"]
+        now = datetime.utcnow().isoformat()
+        
+        db.execute("DELETE FROM comments WHERE id = ?", (comment_id,))
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (contact_id, user_id, "api_delete_comment", f"Deleted comment {comment_id}", now))
+        db.commit()
+        
+        return jsonify({"success": True})
 
     with app.app_context():
         init_db()
