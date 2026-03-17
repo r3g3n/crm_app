@@ -18,17 +18,29 @@ def add_api_user():
         conn.row_factory = sqlite3.Row
         db = conn.cursor()
         
+        # Проверяем и добавляем колонку role, если её нет
+        cursor = conn.execute('PRAGMA table_info(users)')
+        columns = [row[1] for row in cursor.fetchall()]
+        
+        if 'role' not in columns:
+            print("Добавляем колонку 'role' в таблицу users...")
+            db.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+            
+        if 'avatar_url' not in columns:
+            print("Добавляем колонку 'avatar_url' в таблицу users...")
+            db.execute("ALTER TABLE users ADD COLUMN avatar_url TEXT")
+        
         # Проверяем, существует ли пользователь api
         user = db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
         
         now = datetime.utcnow().isoformat()
         
         if user:
-            # Обновляем пароль, если пользователь существует
-            print(f"Пользователь '{username}' уже существует. Обновляем пароль...")
+            # Обновляем пароль и роль, если пользователь существует
+            print(f"Пользователь '{username}' уже существует. Обновляем пароль и роль...")
             db.execute(
-                "UPDATE users SET password_hash = ? WHERE username = ?",
-                (hash_password(password), username)
+                "UPDATE users SET password_hash = ?, role = ? WHERE username = ?",
+                (hash_password(password), role, username)
             )
         else:
             # Создаем нового пользователя
