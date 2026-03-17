@@ -21,6 +21,7 @@
               <option value="user" {% if not user or user.role == 'user' %}selected{% endif %}>Пользователь</option>
               <option value="restricted" {% if user and user.role == 'restricted' %}selected{% endif %}>Менеджер</option>
               <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>Администратор</option>
+              <option value="api" {% if user and user.role == 'api' %}selected{% endif %}>API</option>
             </select>
           </div>
           
