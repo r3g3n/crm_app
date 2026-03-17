@@ -1,12 +1,15 @@
 import sqlite3
 import os
+import hashlib
+import secrets
 from datetime import datetime
-from werkzeug.security import generate_password_hash
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'crm.db')
 
-def hash_password(password):
-    return generate_password_hash(password, method='pbkdf2:sha256')
+def hash_password(password: str) -> str:
+    salt = secrets.token_hex(8)
+    h = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 200000)
+    return f"{salt}${h.hex()}"
 
 def add_api_user():
     username = 'api'
