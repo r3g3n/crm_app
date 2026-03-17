@@ -6,9 +6,10 @@ import hashlib
 import secrets
 from datetime import datetime
 from functools import wraps
-from flask import Flask, g, render_template, request, redirect, url_for, session, flash
+from flask import Flask, g, render_template, request, redirect, url_for, session, flash, jsonify
 from markupsafe import Markup
 import bleach
+from itsdangerous import URLSafeTimedSerializer
 
 # Configure bleach allowed tags and attributes for Quill.js
 ALLOWED_TAGS = [
@@ -1054,6 +1055,364 @@ def create_app():
             db.commit()
             return redirect(url_for("contact_view", contact_id=contact_id))
         return redirect(url_for("contacts"))
+
+    # ==========================================
+    # REST API IMPLEMENTATION
+    # ==========================================
+
+    def generate_auth_token(user_id):
+        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        return serializer.dumps(user_id, salt='api-auth-salt')
+
+    def verify_auth_token(token, max_age=86400): # 24 hours validity
+        serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        try:
+            user_id = serializer.loads(token, salt='api-auth-salt', max_age=max_age)
+        except Exception:
+            return None
+        return user_id
+
+    def api_required(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith('Bearer '):
+                return jsonify({"success": False, "error": "Missing or invalid Authorization header"}), 401
+            
+            token = auth_header.split(' ')[1]
+            user_id = verify_auth_token(token)
+            
+            if not user_id:
+                return jsonify({"success": False, "error": "Invalid or expired token"}), 401
+            
+            db = get_db()
+            user = db.execute("SELECT id, username, role FROM users WHERE id = ?", (user_id,)).fetchone()
+            if not user:
+                return jsonify({"success": False, "error": "User not found"}), 401
+                
+            g.api_user = dict(user)
+            return f(*args, **kwargs)
+        return wrapper
+
+    @app.route("/api/v1/auth/login", methods=["POST"])
+    def api_login():
+        data = request.get_json() or {}
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+        
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        
+        if user and verify_password(password, user["password_hash"]):
+            token = generate_auth_token(user["id"])
+            return jsonify({
+                "success": True, 
+                "token": token,
+                "user": {
+                    "id": user["id"],
+                    "username": user["username"],
+                    "role": user.get("role", "user")
+                }
+            })
+        
+        return jsonify({"success": False, "error": "Invalid username or password"}), 401
+
+    @app.route("/api/v1/contacts", methods=["GET"])
+    @api_required
+    def api_get_contacts():
+        db = get_db()
+        q = request.args.get("q", "").strip()
+        status_filter = request.args.get("status", "").strip()
+        sort_by = request.args.get("sort", "id").strip()
+        
+        page = max(1, int(request.args.get("page", 1) or 1))
+        per_page = int(request.args.get("per_page", 50))
+        if per_page > 100: per_page = 100
+        
+        base_sql = "FROM contacts c"
+        where_clauses = []
+        params = []
+
+        if q:
+            like = f"%{q}%"
+            where_clauses.append("""
+                (ifnull(city,'') LIKE ? OR
+                ifnull(country,'') LIKE ? OR
+                ifnull(phone,'') LIKE ? OR
+                ifnull(phone2,'') LIKE ? OR
+                ifnull(site,'') LIKE ? OR
+                ifnull(email,'') LIKE ? OR
+                ifnull(email2,'') LIKE ? OR
+                ifnull(email3,'') LIKE ? OR
+                ifnull(description,'') LIKE ? OR
+                ifnull(category,'') LIKE ? OR
+                ifnull(status,'') LIKE ?)
+            """)
+            params.extend([like]*11)
+            
+        if status_filter:
+            where_clauses.append("status = ?")
+            params.append(status_filter)
+
+        where = ""
+        if where_clauses:
+            where = "WHERE " + " AND ".join(where_clauses)
+
+        count_sql = f"SELECT COUNT(*) as c {base_sql} {where}"
+        total = db.execute(count_sql, tuple(params)).fetchone()["c"]
+        pages = max(1, (total + per_page - 1) // per_page)
+        offset = (page - 1) * per_page
+        
+        order_clause = "ORDER BY c.id ASC"
+        if sort_by == "updated_at":
+            order_clause = "ORDER BY c.updated_at DESC"
+
+        data_sql = f"""
+            SELECT c.*, (SELECT COUNT(*) FROM comments WHERE contact_id = c.id) as comment_count 
+            {base_sql} {where} {order_clause} LIMIT ? OFFSET ?
+        """
+        rows = db.execute(data_sql, tuple(params + [per_page, offset])).fetchall()
+        
+        contacts_list = [dict(row) for row in rows]
+        
+        return jsonify({
+            "success": True,
+            "data": contacts_list,
+            "meta": {
+                "total": total,
+                "page": page,
+                "pages": pages,
+                "per_page": per_page
+            }
+        })
+
+    @app.route("/api/v1/contacts/<int:contact_id>", methods=["GET"])
+    @api_required
+    def api_get_contact(contact_id):
+        db = get_db()
+        contact = db.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if not contact:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        comments = db.execute(
+            "SELECT c.id, c.content, c.created_at, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id=u.id WHERE c.contact_id=? ORDER BY c.id DESC",
+            (contact_id,)
+        ).fetchall()
+        
+        history = db.execute(
+            "SELECT h.id, h.action, h.snapshot, h.created_at, u.username FROM history h LEFT JOIN users u ON h.user_id=u.id WHERE h.contact_id=? ORDER BY h.id DESC LIMIT 50",
+            (contact_id,)
+        ).fetchall()
+            
+        result = dict(contact)
+        result["comments"] = [dict(c) for c in comments]
+        result["history"] = [dict(h) for h in history]
+        
+        return jsonify({
+            "success": True,
+            "data": result
+        })
+
+    @app.route("/api/v1/contacts", methods=["POST"])
+    @api_required
+    def api_create_contact():
+        data = request.get_json() or {}
+        db = get_db()
+        now = datetime.utcnow().isoformat()
+        user_id = g.api_user["id"]
+        
+        status = data.get("status", "Новый").strip() or "Новый"
+        if status not in STATUS_OPTIONS:
+            status = "Новый"
+            
+        params = (
+            data.get("city", "").strip(),
+            data.get("country", "").strip(),
+            data.get("phone", "").strip(),
+            data.get("phone2", "").strip(),
+            data.get("site", "").strip(),
+            data.get("email", "").strip(),
+            data.get("email2", "").strip(),
+            data.get("email3", "").strip(),
+            clean_html_content(data.get("description", "")),
+            clean_html_content(data.get("detailed_report", "")),
+            clean_html_content(data.get("first_mail", "")),
+            data.get("category", "").strip(),
+            status,
+            user_id,
+            user_id,
+            now,
+            now
+        )
+        
+        cur = db.execute(
+            """
+            INSERT INTO contacts(city,country,phone,phone2,site,email,email2,email3,description,detailed_report,first_mail,category,status,created_by,updated_by,created_at,updated_at)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            params
+        )
+        cid = cur.lastrowid
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (cid, user_id, "create", "", now))
+        db.commit()
+        
+        return jsonify({"success": True, "contact_id": cid}), 201
+
+    @app.route("/api/v1/contacts/<int:contact_id>", methods=["PUT"])
+    @api_required
+    def api_update_contact(contact_id):
+        db = get_db()
+        contact = db.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if not contact:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        data = request.get_json() or {}
+        now = datetime.utcnow().isoformat()
+        user_id = g.api_user["id"]
+        
+        # Build update query dynamically based on provided fields
+        updatable_fields = [
+            "city", "country", "phone", "phone2", "site", "email", "email2", 
+            "email3", "description", "detailed_report", "first_mail", "category", "status"
+        ]
+        
+        update_clauses = []
+        params = []
+        
+        for field in updatable_fields:
+            if field in data:
+                val = data[field]
+                if isinstance(val, str):
+                    if field in ["description", "detailed_report", "first_mail"]:
+                        val = clean_html_content(val)
+                    else:
+                        val = val.strip()
+                
+                # Validation for status
+                if field == "status" and val not in STATUS_OPTIONS:
+                    continue
+                    
+                update_clauses.append(f"{field}=?")
+                params.append(val)
+                
+        if not update_clauses:
+            return jsonify({"success": False, "error": "No valid fields to update"}), 400
+            
+        update_clauses.append("updated_by=?")
+        params.append(user_id)
+        
+        update_clauses.append("updated_at=?")
+        params.append(now)
+        
+        params.append(contact_id)
+        
+        sql = f"UPDATE contacts SET {', '.join(update_clauses)} WHERE id=?"
+        db.execute(sql, tuple(params))
+        
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (contact_id, user_id, "api_update", "", now))
+        db.commit()
+        
+        return jsonify({"success": True})
+
+    @app.route("/api/v1/contacts/<int:contact_id>", methods=["DELETE"])
+    @api_required
+    def api_delete_contact(contact_id):
+        db = get_db()
+        contact = db.execute("SELECT id FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if not contact:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        db.execute("DELETE FROM comments WHERE contact_id=?", (contact_id,))
+        db.execute("DELETE FROM history WHERE contact_id=?", (contact_id,))
+        db.execute("DELETE FROM contacts WHERE id=?", (contact_id,))
+        db.commit()
+        
+        return jsonify({"success": True})
+
+    @app.route("/api/v1/contacts/<int:contact_id>/status", methods=["PUT", "POST"])
+    @api_required
+    def api_update_contact_status(contact_id):
+        data = request.get_json() or {}
+        new_status = data.get("status")
+        
+        if not new_status or new_status not in STATUS_OPTIONS:
+            return jsonify({"success": False, "error": "Invalid status"}), 400
+            
+        db = get_db()
+        row = db.execute("SELECT id FROM contacts WHERE id=?", (contact_id,)).fetchone()
+        if not row:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        user_id = g.api_user["id"]
+        now = datetime.utcnow().isoformat()
+        
+        db.execute("UPDATE contacts SET status=?, updated_by=?, updated_at=? WHERE id=?",
+                   (new_status, user_id, now, contact_id))
+                   
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (contact_id, user_id, "api_update_status", f"Changed status to {new_status}", now))
+        
+        db.commit()
+        return jsonify({"success": True, "status": new_status, "color": status_color(new_status)})
+
+    @app.route("/api/v1/contacts/<int:contact_id>/comments", methods=["GET"])
+    @api_required
+    def api_get_comments(contact_id):
+        db = get_db()
+        contact = db.execute("SELECT id FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if not contact:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        comments = db.execute(
+            "SELECT c.id, c.content, c.created_at, u.username, u.avatar_url FROM comments c JOIN users u ON c.user_id=u.id WHERE c.contact_id=? ORDER BY c.created_at ASC",
+            (contact_id,)
+        ).fetchall()
+        
+        return jsonify({
+            "success": True,
+            "data": [dict(c) for c in comments]
+        })
+
+    @app.route("/api/v1/contacts/<int:contact_id>/comments", methods=["POST"])
+    @api_required
+    def api_add_comment(contact_id):
+        data = request.get_json() or {}
+        content = data.get("content", "").strip()
+        
+        if not content:
+            return jsonify({"success": False, "error": "Content is required"}), 400
+            
+        db = get_db()
+        contact = db.execute("SELECT id FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        if not contact:
+            return jsonify({"success": False, "error": "Contact not found"}), 404
+            
+        user_id = g.api_user["id"]
+        now = datetime.utcnow().isoformat()
+        
+        cursor = db.execute("INSERT INTO comments(contact_id,user_id,content,created_at) VALUES(?,?,?,?)",
+                   (contact_id, user_id, content, now))
+        comment_id = cursor.lastrowid
+        
+        db.execute("INSERT INTO history(contact_id,user_id,action,snapshot,created_at) VALUES(?,?,?,?,?)",
+                   (contact_id, user_id, "api_comment", "", now))
+        db.execute("UPDATE contacts SET updated_at = ? WHERE id = ?", (now, contact_id))
+        db.commit()
+        
+        user_data = db.execute("SELECT username, avatar_url FROM users WHERE id=?", (user_id,)).fetchone()
+        
+        return jsonify({
+            "success": True,
+            "comment": {
+                "id": comment_id,
+                "username": user_data["username"],
+                "avatar_url": user_data["avatar_url"],
+                "content": bleach.clean(content, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRIBUTES, strip=True),
+                "created_at": now
+            }
+        }), 201
 
     with app.app_context():
         init_db()
