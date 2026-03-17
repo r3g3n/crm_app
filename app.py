@@ -1120,13 +1120,15 @@ def create_app():
         
         if user and verify_password(password, user["password_hash"]):
             token = generate_auth_token(user["id"])
+            # user is sqlite3.Row, need to check if column exists safely or convert to dict
+            user_dict = dict(user)
             return jsonify({
                 "success": True, 
                 "token": token,
                 "user": {
-                    "id": user["id"],
-                    "username": user["username"],
-                    "role": user.get("role", "user")
+                    "id": user_dict["id"],
+                    "username": user_dict["username"],
+                    "role": user_dict.get("role", "user")
                 }
             })
         
